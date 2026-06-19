@@ -34,7 +34,9 @@ npm run build
 
 ## Current Scope
 
-- Basic routing for `/login`, `/register`, and `/dashboard`.
-- Empty page shells for authentication and dashboard screens.
+- Authentication flow for `/login`, `/register`, and protected `/dashboard`.
+- Demo token storage in `localStorage`.
+- Auth context for current user state and logout.
+- Friendly loading and error states for auth requests.
 - Shared Axios HTTP client configured from `VITE_API_BASE_URL`.
-- Typed API modules prepared for later auth and task slices.
+- Typed API modules prepared for the later task slice.

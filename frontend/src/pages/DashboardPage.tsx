@@ -1,4 +1,8 @@
+import { useAuth } from '../auth/useAuth'
+
 export function DashboardPage() {
+  const { user } = useAuth()
+
   return (
     <section className="page" aria-labelledby="dashboard-title">
       <div className="page-panel">
@@ -7,8 +11,8 @@ export function DashboardPage() {
           Dashboard
         </h1>
         <p className="page-description">
-          Task list and board behavior will be added in a later task-focused
-          slice.
+          Welcome, {user?.email}. Task list and board behavior will be added in
+          a later task-focused slice.
         </p>
       </div>
     </section>

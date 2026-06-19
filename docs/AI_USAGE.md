@@ -432,3 +432,51 @@ Add lightweight observability to TaskBoard without heavy infrastructure: correla
 
 - The existing API validation response format is unchanged.
 - Unhandled exceptions use safe ProblemDetails responses because they are middleware-owned unexpected failures, not application validation failures.
+
+## Phase: Frontend Authentication Flow
+
+### Prompt used with Codex
+
+Implement the frontend authentication flow: login page, register page, auth API calls, token storage for demo purposes, auth state management, protected dashboard route, logout, friendly loading and error states, using `VITE_API_BASE_URL`. Do not implement task CRUD or use a heavy state management library.
+
+### Representative generated code
+
+- `frontend/src/auth/AuthContext.tsx` for current-user state, login, register, logout, and startup session loading.
+- `frontend/src/auth/authTokenStorage.ts` for demo `localStorage` token persistence.
+- `frontend/src/auth/ProtectedRoute.tsx` for guarding `/dashboard`.
+- Login and register forms in `frontend/src/pages/LoginPage.tsx` and `frontend/src/pages/RegisterPage.tsx`.
+- Axios bearer-token attachment in `frontend/src/api/httpClient.ts`.
+- Development CORS policy in `TaskBoard.Api` so the Vite frontend can call the API from `localhost:5173`.
+
+### How the output was validated
+
+- `npm run build` passed from `frontend`.
+- `npm run lint` passed from `frontend`.
+- `dotnet build backend\TaskBoard.slnx` passed after allowing NuGet restore network access.
+- `dotnet test` passed from `backend`.
+- `docker compose up -d --build` rebuilt and started PostgreSQL, API, and frontend.
+- Compose smoke checks covered `/health`, CORS preflight for `http://localhost:5173`, demo login, frontend `/login`, registration, and `/api/auth/me` with the returned token.
+
+### What was corrected
+
+- The frontend auth response type was aligned with the API response shape, including the nested `user`.
+- Browser-only password length validation was avoided because the API currently requires only a non-empty password.
+- CORS was added narrowly for the local frontend origin so the browser flow can call the Compose-exposed API.
+
+### Edge cases
+
+- Expired or invalid stored access tokens are cleared during startup session loading.
+- Anonymous users are redirected from `/dashboard` to `/login`.
+- Network, API, and validation failures are shown as inline form errors.
+
+### Authentication decisions
+
+- Tokens are stored in `localStorage` only for this demo/interview slice.
+- The refresh token is stored but not used yet because refresh-token rotation is outside this PR.
+- Successful registration signs the user in immediately and opens the dashboard.
+
+### Validation decisions
+
+- The frontend relies on native required/email inputs for basic usability.
+- API validation messages are surfaced through the shared auth form error state.
+- Task CRUD remains out of scope for this phase.

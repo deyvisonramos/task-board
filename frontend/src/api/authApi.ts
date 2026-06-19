@@ -11,6 +11,9 @@ export type LoginRequest = {
 }
 
 export type AuthResponse = {
+  user: CurrentUserResponse & {
+    createdAt: string
+  }
   accessToken: string
   refreshToken: string
 }

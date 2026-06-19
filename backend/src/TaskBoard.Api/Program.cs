@@ -48,6 +48,21 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>()
 builder.Services.AddTaskBoardInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddCheck<PostgreSqlHealthCheck>("postgresql");
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("TaskBoardFrontend", policy =>
+    {
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>()
+            ?? new[] { "http://localhost:5173" };
+
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 var jwtOptions = builder.Configuration
     .GetSection(JwtOptions.SectionName)
@@ -113,6 +128,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseCors("TaskBoardFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 

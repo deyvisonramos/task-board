@@ -157,6 +157,8 @@ npm run build
 
 Current routes:
 
-- `/login`
-- `/register`
-- `/dashboard`
+- `/login` for the seeded demo user or registered accounts.
+- `/register` to create an account and sign in automatically.
+- `/dashboard`, protected by the frontend auth state.
+
+The frontend stores demo access and refresh tokens in `localStorage` for this interview slice and sends the access token as a bearer token on API requests.
