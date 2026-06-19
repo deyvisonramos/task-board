@@ -1,130 +1,114 @@
 # TaskBoard
 
-TaskBoard is a technical interview project: an authenticated task management API and frontend built with ASP.NET Core, PostgreSQL, raw Npgsql, React, TypeScript, Tailwind CSS, and Clean Architecture.
+TaskBoard is a technical interview project for an authenticated task management application. It includes an ASP.NET Core Web API, PostgreSQL persistence through raw SQL and Npgsql, and a React + TypeScript frontend.
 
-## Local Application Run
+## User Story
 
-Start the local application stack from the repository root:
+As a registered user, I want to create, view, update, and delete my tasks with title, description, status, and due date, so that I can manage my work from a simple dashboard.
 
-```powershell
-docker compose up -d
-```
+## Architecture
 
-This starts PostgreSQL, the ASP.NET Core API, and the built React frontend served by nginx.
+The backend follows Clean Architecture with explicit project boundaries:
 
-- Frontend: `http://localhost:5173`
-- API: `http://localhost:5141`
+- `TaskBoard.Domain`: domain entities and enums.
+- `TaskBoard.Application`: use cases, interfaces, DTOs, validation, and business rules.
+- `TaskBoard.Infrastructure`: raw SQL persistence, Npgsql connection handling, password hashing, JWT token creation, database initialization, and seed data.
+- `TaskBoard.Api`: controllers, authentication/authorization middleware, error responses, health checks, CORS, logging, and API startup wiring.
+- `TaskBoard.UnitTests`: fast tests for application and infrastructure behavior.
+- `TaskBoard.IntegrationTests`: API and repository tests backed by PostgreSQL through Testcontainers.
 
-If you change backend Docker build inputs and need to force an image rebuild:
+Dependency direction is inward: Domain depends on nothing, Application depends on Domain, Infrastructure depends on Application and Domain, and API composes the application by referencing Application, Infrastructure, and Domain.
+
+Business rules stay out of controllers. Data access stays in Infrastructure. SQL is parameterized and kept in Infrastructure. Authentication uses ASP.NET Core JWT authentication and authorization middleware.
+
+## Tech Stack
+
+- Backend: ASP.NET Core Web API, C#, FluentValidation 11.x
+- Database: PostgreSQL
+- Data access: raw SQL with Npgsql
+- Auth: JWT access tokens, refresh tokens, ASP.NET Core `PasswordHasher`
+- Frontend: React, TypeScript, Vite, plain CSS
+- Runtime: Docker Compose
+- Tests: xUnit, Testcontainers
+
+Entity Framework, Dapper, MediatR, and mediator-style libraries are not used.
+
+## Quick Start With Docker Compose
+
+From the repository root:
 
 ```powershell
 docker compose up -d --build
 ```
 
-The API container connects to PostgreSQL on Docker's internal `postgres:5432` address. For optional host-side development, `appsettings.Development.json` points to the same database through host port `15432`.
+This starts:
 
-Run the backend directly from the host when you want the normal .NET inner loop:
+- Frontend: `http://localhost:5173`
+- API: `http://localhost:5141`
+- PostgreSQL: host port `15432`, container port `5432`
 
-```powershell
-dotnet build backend\TaskBoard.slnx
-dotnet run --project backend\src\TaskBoard.Api\TaskBoard.Api.csproj --launch-profile http
-```
-
-In Development, the API initializes the schema with raw SQL scripts and seeds demo data.
-
-Run backend tests:
+Smoke-test the running stack:
 
 ```powershell
-cd backend
-dotnet test
+curl.exe -i http://localhost:5141/health
+curl.exe -i http://localhost:5141/api/public/ping
 ```
 
-Seeded credentials:
+Stop the stack:
+
+```powershell
+docker compose down
+```
+
+Remove the PostgreSQL volume if you want to reset seeded data:
+
+```powershell
+docker compose down -v
+```
+
+## Seeded Credentials
+
+The Development startup path initializes the database schema and demo data.
 
 - Email: `demo@example.com`
 - Password: `Demo123!`
 
-## Manual API Testing
+The demo user has seeded tasks in `Todo`, `InProgress`, and `Done`.
 
-Thunder Client files are included under `docs/thunder-client`:
+## Backend Commands
 
-- `TaskBoard_API.thunder-collection.json`
-- `TaskBoard_Local.thunder-environment.json`
+The backend solution is in `backend`.
 
-To use them:
-
-1. In VS Code Thunder Client, import the collection file.
-2. Import the environment file and select `TaskBoard Local`.
-3. Start the API with the `http` launch profile.
-4. Run `GET Health` and `GET Public Ping`.
-5. Run `POST Login Demo User`.
-6. Copy the `accessToken` response value into the `accessToken` environment variable.
-7. Run `GET Current User` or `GET Private Ping`.
-8. Run `POST Create Task`, then copy its `id` response value into `taskId` before running task get/update/delete requests.
-
-When new API flows are added, update the Thunder Client collection in the same PR so manual verification stays current.
-
-## Health Checks
-
-The API exposes an anonymous health endpoint:
-
-```http
-GET /api/health
-GET /health
-```
-
-`GET /api/health` returns lightweight status metadata: status, application name, environment, and UTC timestamp. The compatibility `/health` endpoint uses ASP.NET Core health checks and verifies that PostgreSQL is reachable through the configured `DbConnectionFactory`. A healthy application returns HTTP 200 with `Healthy`.
-
-Whenever an essential runtime resource is added, add or update a health check in the same PR. Essential resources include databases, queues, caches, object storage, external APIs, identity providers, or any dependency whose outage means the application cannot serve its core workflow. Health checks should be covered by integration tests when practical and should avoid leaking secrets or sensitive connection details.
-
-## Observability
-
-Observability is intentionally lightweight. I used built-in ASP.NET Core logging, request/correlation IDs, safe exception logging, a health endpoint, and a frontend error boundary. I avoided heavy infrastructure because the goal of the exercise is code quality, Clean Architecture, CRUD, authentication, testing, and explainability.
-
-Backend requests use an `X-Correlation-ID` response header. If the client sends `X-Correlation-ID`, the API preserves it; otherwise, the API generates one and includes it in structured log scopes. Request logging records method, path, status code, elapsed time, correlation ID, authenticated user ID when available, and whether the request succeeded. Unhandled exceptions are logged server-side and returned as safe ProblemDetails responses with `correlationId` and `traceId`, without exposing stack traces in production.
-
-The frontend includes an ErrorBoundary for unexpected React rendering errors. API errors that include `correlationId`, `traceId`, or the `X-Correlation-ID` response header keep that request ID attached to the rejected error so UI error states can display or retain it.
-
-This project does not include Elasticsearch, Prometheus, Grafana, Jaeger, Application Insights, or cloud-specific telemetry services.
-
-## API Endpoints
-
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
-- `GET /api/public/ping`
-- `GET /api/private/ping`
-- `GET /api/tasks`
-- `GET /api/tasks/{id}`
-- `POST /api/tasks`
-- `PUT /api/tasks/{id}`
-- `DELETE /api/tasks/{id}`
-- `GET /api/health`
-- `GET /health`
-- `GET /openapi/v1.json` in Development
-
-## Validation
-
-Before backend work is considered done:
+Build from the repository root:
 
 ```powershell
 dotnet build backend\TaskBoard.slnx
+```
+
+Run tests:
+
+```powershell
 cd backend
 dotnet test
 ```
 
-Before runtime wiring or service changes are considered done, verify the Compose stack from the repository root:
+Run the API from the host:
 
 ```powershell
-docker compose up -d
-curl.exe -i http://localhost:5141/health
+dotnet run --project backend\src\TaskBoard.Api\TaskBoard.Api.csproj --launch-profile http
 ```
 
-Keep `docker-compose.yml` current as new local runtime services are added.
+When running the API directly, keep PostgreSQL available. The easiest option is to start the Compose database:
 
-## Frontend Setup
+```powershell
+docker compose up -d postgres
+```
 
-The frontend lives in `frontend` and uses React, TypeScript, and Vite.
+The host-side Development connection string uses `localhost:15432`.
+
+## Frontend Commands
+
+The frontend app is in `frontend`.
 
 Install dependencies:
 
@@ -133,21 +117,11 @@ cd frontend
 npm install
 ```
 
-Copy the environment sample if local overrides are needed:
-
-```powershell
-Copy-Item .env.example .env.local
-```
-
-The default frontend API base URL is `http://localhost:5141`, matching the Compose-exposed API port.
-
 Run the development server:
 
 ```powershell
 npm run dev
 ```
-
-The same frontend is also part of the root Docker Compose stack as a production-style static build and is exposed at `http://localhost:5173`.
 
 Build the frontend:
 
@@ -155,10 +129,106 @@ Build the frontend:
 npm run build
 ```
 
-Current routes:
+The default API base URL is `http://localhost:5141`. To override it locally, copy `frontend\.env.example` to `frontend\.env.local` and change `VITE_API_BASE_URL`.
 
-- `/login` for the seeded demo user or registered accounts.
-- `/register` to create an account and sign in automatically.
-- `/dashboard`, protected by the frontend auth state, for listing, modal create/edit, delete, and drag-and-drop status updates.
+## Test Commands
 
-The frontend stores demo access and refresh tokens in `localStorage` for this interview slice and sends the access token as a bearer token on API requests.
+Backend validation:
+
+```powershell
+dotnet build backend\TaskBoard.slnx
+cd backend
+dotnet test
+```
+
+Frontend validation:
+
+```powershell
+cd frontend
+npm run build
+```
+
+Runtime validation after Compose or service-wiring changes:
+
+```powershell
+docker compose up -d --build
+curl.exe -i http://localhost:5141/health
+curl.exe -i http://localhost:5141/api/public/ping
+```
+
+## API Endpoints
+
+Auth:
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+
+Ping and health:
+
+- `GET /api/public/ping`
+- `GET /api/private/ping`
+- `GET /api/health`
+- `GET /health`
+
+Tasks:
+
+- `GET /api/tasks`
+- `GET /api/tasks/{id}`
+- `POST /api/tasks`
+- `PUT /api/tasks/{id}`
+- `DELETE /api/tasks/{id}`
+
+Development OpenAPI document:
+
+- `GET /openapi/v1.json`
+
+Protected endpoints require a bearer access token.
+
+## Demo Script
+
+1. Start the application:
+
+   ```powershell
+   docker compose up -d --build
+   ```
+
+2. Open `http://localhost:5173`.
+
+3. Log in with the seeded credentials:
+
+   - Email: `demo@example.com`
+   - Password: `Demo123!`
+
+4. Review the seeded tasks on the dashboard.
+
+5. Create a task with a title, optional description, status, and due date.
+
+6. Drag a task to another status column.
+
+7. Edit a task and save the changes.
+
+8. Delete a task.
+
+9. Register a new account and confirm the dashboard starts with that user's own task list.
+
+10. Optionally verify API auth directly:
+
+    ```powershell
+    curl.exe -i http://localhost:5141/api/private/ping
+    ```
+
+    The endpoint should reject anonymous requests. Log in through `POST /api/auth/login`, then retry with `Authorization: Bearer <accessToken>`.
+
+## Error and Validation Format
+
+The API uses a single error response shape for application and validation failures. Validation failures include a `validation` array with item codes and messages. Authentication challenges are handled by ASP.NET Core authentication/authorization middleware rather than controller response helpers.
+
+## Known Tradeoffs
+
+- The current database initialization uses raw SQL schema and seed scripts in Infrastructure and applies them during Development startup. It is intentionally simple for the interview slice.
+- Tailwind CSS is part of the target exercise stack, but this checkout currently uses plain CSS instead of Tailwind packages.
+- Refresh tokens are returned by auth responses, but the frontend currently stores tokens in `localStorage` for a simple demo workflow.
+- The frontend is intentionally lightweight: it covers login, registration, dashboard task CRUD, drag-and-drop status changes, loading states, error states, empty states, and responsive layout without adding a larger UI framework.
+- Observability is intentionally minimal: built-in ASP.NET Core logging, correlation IDs, health checks, safe exception handling, and a React error boundary.
+- Docker Compose is the supported full-stack local runtime. Host-side backend and frontend commands are available for the development inner loop.
