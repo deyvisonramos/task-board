@@ -57,7 +57,7 @@ public sealed class AuthApiTests : IClassFixture<PostgresFixture>, IDisposable
     }
 
     [Fact]
-    public async Task Login_WithInvalidPassword_ReturnsUnauthorized()
+    public async Task Login_WithInvalidPassword_ReturnsBadRequest()
     {
         var credentials = await RegisterUserAsync();
 
@@ -67,7 +67,25 @@ public sealed class AuthApiTests : IClassFixture<PostgresFixture>, IDisposable
             password = "WrongPassword123!"
         });
 
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Register_WithInvalidEmail_ReturnsValidationResponse()
+    {
+        var response = await _client.PostAsJsonAsync("/api/auth/register", new
+        {
+            email = "not-an-email",
+            password = "Password123!"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var json = await ReadJsonAsync(response);
+        json.RootElement.GetProperty("code").GetString().Should().Be("Validation.Failed");
+        json.RootElement.GetProperty("validation")[0].GetProperty("code").GetString().Should().Be("Auth.EmailInvalid");
+        json.RootElement.GetProperty("validation")[0].GetProperty("message").GetString()
+            .Should().Be("Email must be a valid email address.");
     }
 
     [Fact]

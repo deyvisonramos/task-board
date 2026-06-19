@@ -1,16 +1,44 @@
 using System.Text;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using TaskBoard.Api.HealthChecks;
+using TaskBoard.Api.Responses;
+using TaskBoard.Api.Validation;
+using TaskBoard.Application.Auth;
 using TaskBoard.Infrastructure;
 using TaskBoard.Infrastructure.Auth;
 using TaskBoard.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<FluentValidationActionFilter>();
+})
+.ConfigureApiBehaviorOptions(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var validationErrors = context.ModelState.Values
+            .SelectMany(entry => entry.Errors)
+            .Select(error => new ValidationErrorResponse(
+                "Validation.Invalid",
+                string.IsNullOrWhiteSpace(error.ErrorMessage)
+                    ? "The request is invalid."
+                    : error.ErrorMessage))
+            .ToArray();
+
+        return new BadRequestObjectResult(new ApiErrorResponse(
+            "Validation.Failed",
+            "Validation failed.",
+            validationErrors));
+    };
+});
 builder.Services.AddOpenApi();
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 builder.Services.AddTaskBoardInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddCheck<PostgreSqlHealthCheck>("postgresql");
@@ -35,6 +63,20 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(1)
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                var subject = context.Principal?.FindFirst("sub")?.Value;
+
+                if (!Guid.TryParse(subject, out _))
+                {
+                    context.Fail("The access token subject is invalid.");
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 

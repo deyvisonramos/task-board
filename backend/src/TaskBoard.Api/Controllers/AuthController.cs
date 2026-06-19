@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskBoard.Application.Auth;
-using TaskBoard.Application.Common;
 
 namespace TaskBoard.Api.Controllers;
 
@@ -41,17 +40,13 @@ public sealed class AuthController : ApiControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me(CancellationToken cancellationToken)
     {
-        var result = TryGetUserId(out var userId)
-            ? await _authService.GetCurrentUserAsync(userId, cancellationToken)
-            : Result<UserDto>.Failure("Auth.InvalidToken", "The access token is invalid.");
+        var result = await _authService.GetCurrentUserAsync(GetUserId(), cancellationToken);
 
         return FromResult(result, Ok);
     }
 
-    private bool TryGetUserId(out Guid userId)
+    private Guid GetUserId()
     {
-        var subject = User.FindFirst("sub")?.Value;
-
-        return Guid.TryParse(subject, out userId);
+        return Guid.Parse(User.FindFirst("sub")!.Value);
     }
 }
