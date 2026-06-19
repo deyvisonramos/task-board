@@ -2,15 +2,18 @@
 
 TaskBoard is a technical interview project: an authenticated task management API and frontend built with ASP.NET Core, PostgreSQL, raw Npgsql, React, TypeScript, Tailwind CSS, and Clean Architecture.
 
-## Local Backend Run
+## Local Application Run
 
-Start the local backend stack from the repository root:
+Start the local application stack from the repository root:
 
 ```powershell
 docker compose up -d
 ```
 
-This starts PostgreSQL and the ASP.NET Core API. The API is available at `http://localhost:5141`.
+This starts PostgreSQL, the ASP.NET Core API, and the React frontend.
+
+- Frontend: `http://localhost:5173`
+- API: `http://localhost:5141`
 
 If you change backend Docker build inputs and need to force an image rebuild:
 
@@ -105,4 +108,43 @@ docker compose up -d
 curl.exe -i http://localhost:5141/health
 ```
 
-Keep `docker-compose.yml` current as new local runtime services are added, including the future frontend.
+Keep `docker-compose.yml` current as new local runtime services are added.
+
+## Frontend Setup
+
+The frontend lives in `frontend` and uses React, TypeScript, and Vite.
+
+Install dependencies:
+
+```powershell
+cd frontend
+npm install
+```
+
+Copy the environment sample if local overrides are needed:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+The default frontend API base URL is `http://localhost:5141`, matching the Compose-exposed API port.
+
+Run the development server:
+
+```powershell
+npm run dev
+```
+
+The same frontend is also part of the root Docker Compose stack and is exposed at `http://localhost:5173`.
+
+Build the frontend:
+
+```powershell
+npm run build
+```
+
+Current routes:
+
+- `/login`
+- `/register`
+- `/dashboard`
