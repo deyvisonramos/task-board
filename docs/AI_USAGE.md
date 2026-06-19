@@ -336,3 +336,52 @@ Add local development setup for this PR: root `docker-compose.yml` with PostgreS
 - Schema and seed remain raw SQL in the Infrastructure layer.
 - No EF, Dapper, or MediatR packages were added.
 - The project harness now requires `docker-compose.yml` to stay current and runnable as local runtime services are added or changed.
+
+## Phase: Frontend Skeleton
+
+### Prompt used with Codex
+
+Set up the frontend skeleton: React and TypeScript app structure, basic routing, empty Login/Register/Dashboard pages, API client base setup, CSS reset/layout, `.env.example`, and README frontend setup instructions. Do not implement real auth, task CRUD, or add a heavy UI framework.
+
+### Representative generated code
+
+- `src/App.tsx` with routes for `/login`, `/register`, and `/dashboard`.
+- `src/main.tsx` with `BrowserRouter` setup.
+- Empty page shells under `src/pages`.
+- Shared Axios client in `src/api/httpClient.ts`.
+- Endpoint-facing API modules in `src/api/authApi.ts` and `src/api/tasksApi.ts`.
+- Basic reset and layout styles in `src/index.css`.
+
+### How the output was validated
+
+- `npm run build` passed from `frontend`.
+- `npm run lint` passed from `frontend`.
+- The Vite dev server started successfully.
+- A browser check rendered `/login`, `/register`, and `/dashboard` with the expected page headings.
+- `docker compose up -d` started PostgreSQL, the API, and the frontend.
+- `GET /health` returned `200 OK` from the Compose-hosted API.
+- `GET /login` returned the Compose-hosted frontend HTML.
+- A browser check against the Compose-hosted frontend rendered `/login`, `/register`, and `/dashboard` without console warnings or errors.
+
+### What was corrected
+
+- Removed the default Vite starter UI and unused starter assets.
+- Updated the frontend API base URL sample to match the Compose-exposed API port, `http://localhost:5141`.
+- Replaced template README content with TaskBoard frontend setup instructions.
+- Added the frontend service to the root Docker Compose stack after identifying that the skeleton is now part of the local runtime.
+
+### Edge cases
+
+- Unknown routes redirect to `/login`.
+- The root route redirects to `/login`.
+- Navigation highlights the active route.
+
+### Authentication decisions
+
+- No real authentication flow is implemented in this phase.
+- Auth API function shapes are prepared for a later auth UI slice.
+
+### Validation decisions
+
+- No frontend form validation is implemented because login and registration forms are out of scope.
+- API base URL configuration uses `VITE_API_BASE_URL` with a local default.
