@@ -134,9 +134,9 @@ public sealed class TaskRepository : ITaskRepository
         {
             Value = taskItem.Status.ToString()
         });
-        command.Parameters.Add(new NpgsqlParameter("due_date", NpgsqlDbType.Date)
+        command.Parameters.Add(new NpgsqlParameter("due_date", NpgsqlDbType.TimestampTz)
         {
-            Value = taskItem.DueDate.Date
+            Value = ToUtc(taskItem.DueDate)
         });
         command.Parameters.Add(new NpgsqlParameter("updated_at", NpgsqlDbType.TimestampTz)
         {

@@ -13,7 +13,7 @@ create table if not exists tasks
     title varchar(100) not null,
     description varchar(1000) null,
     status varchar(20) not null,
-    due_date date not null,
+    due_date timestamptz not null,
     created_at timestamptz not null,
     updated_at timestamptz null,
     constraint ck_tasks_status check (status in ('Todo', 'InProgress', 'Done'))

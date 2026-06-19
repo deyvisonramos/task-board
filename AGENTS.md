@@ -53,6 +53,8 @@ Runtime and deployment:
 
 - Use Docker Compose for the full application, including PostgreSQL, API, and frontend.
 - The application should be runnable locally through Docker Compose.
+- Keep `docker-compose.yml` up to date as services are added or changed; future frontend, worker, cache, or other runtime services must be included when they become part of the local application.
+- When a PR changes runtime wiring, service dependencies, ports, environment variables, database initialization, or adds a new service, verify the local Compose stack with `docker compose up -d` and a relevant smoke test.
 - Backend tests should use Testcontainers for integration-test PostgreSQL dependencies.
 
 Code organization and naming:
@@ -172,6 +174,7 @@ Build and IDE validation:
 - Keep runtime package references explicit in the project that owns the concrete implementation. For example, Infrastructure password hashing must reference `Microsoft.Extensions.Identity.Core` directly because it instantiates ASP.NET Core `PasswordHasher`.
 - Before calling backend work done, run `dotnet build backend\TaskBoard.slnx` from the repository root or `dotnet build TaskBoard.slnx` from `backend`.
 - Then run `dotnet test` from `backend`.
+- Before calling runtime or integration wiring done, run `docker compose up -d` from the repository root and smoke-test the affected service through the Compose-exposed port.
 
 Unit tests:
 
@@ -257,4 +260,5 @@ A task is done only when:
 - The implementation follows Clean Architecture.
 - No banned libraries were added.
 - The README or docs are updated when needed.
+- Docker Compose remains current and runnable for the full local application whenever runtime services or wiring change.
 - A stale-artifact cleanup pass was completed: remove or update obsolete files, duplicate validation/business rules, unused manual-test assets, dead classes, and superseded docs created or made stale by the iteration.

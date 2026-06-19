@@ -65,7 +65,7 @@ public sealed class RepositoryTests : IClassFixture<PostgresFixture>
         result.Title.Should().Be(task.Title);
         result.Description.Should().Be(task.Description);
         result.Status.Should().Be(task.Status);
-        result.DueDate.Date.Should().Be(task.DueDate.Date);
+        result.DueDate.Should().BeCloseTo(task.DueDate, TimeSpan.FromMilliseconds(1));
         result.CreatedAt.Should().BeCloseTo(task.CreatedAt, TimeSpan.FromMilliseconds(1));
         result.UpdatedAt.Should().BeCloseTo(task.UpdatedAt, TimeSpan.FromMilliseconds(1));
     }
@@ -108,7 +108,7 @@ public sealed class RepositoryTests : IClassFixture<PostgresFixture>
             "Updated title",
             "Updated description",
             TaskItemStatus.Done,
-            DateTime.UtcNow.Date.AddDays(3),
+            DateTime.UtcNow.AddDays(3),
             updatedAt);
 
         await tasks.UpdateAsync(task);
@@ -119,7 +119,7 @@ public sealed class RepositoryTests : IClassFixture<PostgresFixture>
         result!.Title.Should().Be("Updated title");
         result.Description.Should().Be("Updated description");
         result.Status.Should().Be(TaskItemStatus.Done);
-        result.DueDate.Date.Should().Be(task.DueDate.Date);
+        result.DueDate.Should().BeCloseTo(task.DueDate, TimeSpan.FromMilliseconds(1));
         result.UpdatedAt.Should().BeCloseTo(updatedAt, TimeSpan.FromMilliseconds(1));
     }
 
@@ -170,7 +170,7 @@ public sealed class RepositoryTests : IClassFixture<PostgresFixture>
             title,
             "Test description",
             TaskItemStatus.Todo,
-            now.Date.AddDays(1),
+            now.AddDays(1),
             now,
             now);
     }

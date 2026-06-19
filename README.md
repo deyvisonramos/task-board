@@ -2,18 +2,39 @@
 
 TaskBoard is a technical interview project: an authenticated task management API and frontend built with ASP.NET Core, PostgreSQL, raw Npgsql, React, TypeScript, Tailwind CSS, and Clean Architecture.
 
-## Local API
+## Local Backend Run
 
-Backend commands:
+Start the local backend stack from the repository root:
+
+```powershell
+docker compose up -d
+```
+
+This starts PostgreSQL and the ASP.NET Core API. The API is available at `http://localhost:5141`.
+
+If you change backend Docker build inputs and need to force an image rebuild:
+
+```powershell
+docker compose up -d --build
+```
+
+The API container connects to PostgreSQL on Docker's internal `postgres:5432` address. For optional host-side development, `appsettings.Development.json` points to the same database through host port `15432`.
+
+Run the backend directly from the host when you want the normal .NET inner loop:
 
 ```powershell
 dotnet build backend\TaskBoard.slnx
-cd backend
-dotnet test
-dotnet run --project src\TaskBoard.Api\TaskBoard.Api.csproj --launch-profile http
+dotnet run --project backend\src\TaskBoard.Api\TaskBoard.Api.csproj --launch-profile http
 ```
 
-The local HTTP profile runs at `http://localhost:5141`.
+In Development, the API initializes the schema with raw SQL scripts and seeds demo data.
+
+Run backend tests:
+
+```powershell
+cd backend
+dotnet test
+```
 
 Seeded credentials:
 
@@ -76,3 +97,12 @@ dotnet build backend\TaskBoard.slnx
 cd backend
 dotnet test
 ```
+
+Before runtime wiring or service changes are considered done, verify the Compose stack from the repository root:
+
+```powershell
+docker compose up -d
+curl.exe -i http://localhost:5141/health
+```
+
+Keep `docker-compose.yml` current as new local runtime services are added, including the future frontend.

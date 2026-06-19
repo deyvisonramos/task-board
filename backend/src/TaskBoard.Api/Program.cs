@@ -97,10 +97,8 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi().AllowAnonymous();
-}
 
-using (var scope = app.Services.CreateScope())
-{
+    using var scope = app.Services.CreateScope();
     var initializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
     await initializer.InitializeAsync();
 }
