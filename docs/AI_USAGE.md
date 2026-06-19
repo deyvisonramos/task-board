@@ -207,3 +207,44 @@ Add a Thunder Client collection for manually calling the API flows and update do
 
 - Essential runtime dependencies should add health checks in the same PR that introduces them.
 - Health checks should not expose secrets or sensitive connection details.
+
+## Phase: Validation and Auth Pipeline Cleanup
+
+### Prompt used with Codex
+
+Use the open-source FluentValidation line before the license change to validate request model inputs, discover validators from the assembly where the request models live, and return validation errors in the standard API response format. Move authentication behavior back into ASP.NET Core middleware/pipeline patterns instead of mapping authentication failures manually in controller response helpers, and update the project harness so the pattern does not regress.
+
+### Representative generated code
+
+- `RegisterRequestValidator` and `LoginRequestValidator` in the Application assembly.
+- `FluentValidationActionFilter` for automatic controller argument validation.
+- MVC invalid model-state response customization in `Program.cs`.
+- JWT bearer `OnTokenValidated` subject validation in `Program.cs`.
+- API convention tests that prevent manual auth failure mapping in `ApiControllerBase`.
+
+### How the output was validated
+
+- `dotnet build backend\TaskBoard.slnx` passed.
+- `dotnet test --no-build` passed all unit and integration tests.
+
+### What was corrected
+
+- `ApiControllerBase` no longer maps `Auth.*` failures to `Unauthorized`; authentication challenges are handled by ASP.NET Core authentication/authorization middleware.
+- Invalid login credentials now return the standard application failure response as `400 Bad Request`; protected endpoints still return `401 Unauthorized` through middleware.
+- Invalid request DTOs are validated before controller actions and returned as `ApiErrorResponse` with validation code/message items.
+
+### Edge cases
+
+- Invalid email formats return `Auth.EmailInvalid`.
+- JWTs without a valid GUID `sub` claim fail token validation before protected actions run.
+
+### Authentication decisions
+
+- Default authorization remains enforced through the fallback authorization policy.
+- Public endpoints continue to use `AllowAnonymous`.
+
+### Validation decisions
+
+- FluentValidation is pinned to the 11.x package line.
+- Validators live beside the request DTOs in `TaskBoard.Application`.
+- The API registers validators by assembly and uses one validation filter for controller arguments.

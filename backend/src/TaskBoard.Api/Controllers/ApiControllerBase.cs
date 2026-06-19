@@ -26,12 +26,6 @@ public abstract class ApiControllerBase : ControllerBase
 
         var response = new ApiErrorResponse(error.Code, error.Message, []);
 
-        return error.Code switch
-        {
-            "Auth.InvalidCredentials" => Unauthorized(response),
-            "Auth.InvalidToken" => Unauthorized(response),
-            "Auth.UserNotFound" => Unauthorized(response),
-            _ => BadRequest(response)
-        };
+        return BadRequest(response);
     }
 }
