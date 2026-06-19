@@ -86,7 +86,7 @@ Implement the Infrastructure data layer using PostgreSQL and raw Npgsql, limited
 
 - Repository writes use Npgsql parameters for user and task values.
 - Task status is stored as the enum name with a database check constraint.
-- `due_date` follows the requested PostgreSQL `date` column type.
+- `due_date` is stored as `timestamptz` so due dates preserve full UTC timestamps.
 
 ## Phase: Authentication Infrastructure
 
@@ -290,3 +290,49 @@ Use the open-source FluentValidation line before the license change to validate 
 - FluentValidation is pinned to the 11.x package line.
 - Validators live beside the request DTOs in `TaskBoard.Application`.
 - The API registers validators by assembly and uses one validation filter for controller arguments.
+
+## Phase: Local Development Setup
+
+### Prompt used with Codex
+
+Add local development setup for this PR: root `docker-compose.yml` with PostgreSQL and API services, backend Dockerfile, Development connection string, Development-only startup database initialization, demo seed credentials and tasks, README backend run instructions, and validation with `docker compose up -d`, `dotnet test`, and API health/login probes.
+
+### Representative generated code
+
+- Root `docker-compose.yml` for local PostgreSQL and the ASP.NET Core API.
+- Backend `Dockerfile` and `.dockerignore`.
+- `appsettings.Development.json` local PostgreSQL connection string.
+- Development-only `DbInitializer` startup execution in `Program.cs`.
+- Raw SQL schema and seed updates for full UTC task due timestamps.
+- README local backend run instructions.
+
+### How the output was validated
+
+- `docker compose up -d` started PostgreSQL and the API.
+- `dotnet build backend\TaskBoard.slnx` passed.
+- `dotnet test` from `backend` passed all unit and integration tests.
+- `GET /health` returned `200 OK` from the Compose-hosted API.
+- `POST /api/auth/login` succeeded with `demo@example.com` / `Demo123!`.
+
+### What was corrected
+
+- The Compose service avoids a fixed container name so local reviewer machines do not collide with existing containers.
+- The host database port is `15432` to avoid common local PostgreSQL conflicts on `5432`.
+- Startup schema/seed execution is limited to Development.
+- Compose now runs the backend API too, so reviewers do not need a separate host `dotnet run` for the normal local stack.
+
+### Edge cases
+
+- Re-running the initializer remains application-level idempotent through the migration history table.
+- Demo seed inserts use deterministic IDs and conflict handling.
+
+### Authentication decisions
+
+- Demo credentials are local-only and use the existing ASP.NET Core Identity-compatible password hash.
+- Login responses continue to return user DTOs and tokens, never password hashes.
+
+### Validation decisions
+
+- Schema and seed remain raw SQL in the Infrastructure layer.
+- No EF, Dapper, or MediatR packages were added.
+- The project harness now requires `docker-compose.yml` to stay current and runnable as local runtime services are added or changed.

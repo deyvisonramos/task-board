@@ -28,7 +28,7 @@ cross join (
         'Review TaskBoard requirements',
         'Read the technical exercise scope and confirm the first implementation slice.',
         'Todo',
-        '2026-01-05'::date,
+        '2026-01-05T09:00:00Z'::timestamptz,
         '2026-01-01T00:05:00Z'::timestamptz,
         null::timestamptz
     ),
@@ -37,7 +37,7 @@ cross join (
         'Implement repository layer',
         'Use raw Npgsql with parameterized SQL in Infrastructure.',
         'InProgress',
-        '2026-01-06'::date,
+        '2026-01-06T12:00:00Z'::timestamptz,
         '2026-01-01T00:10:00Z'::timestamptz,
         null::timestamptz
     ),
@@ -46,7 +46,7 @@ cross join (
         'Document validation commands',
         'Record how dotnet test was used to validate the backend slice.',
         'Done',
-        '2026-01-07'::date,
+        '2026-01-07T17:00:00Z'::timestamptz,
         '2026-01-01T00:15:00Z'::timestamptz,
         '2026-01-01T00:20:00Z'::timestamptz
     )
