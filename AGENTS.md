@@ -160,6 +160,13 @@ Seed several demo tasks for the demo user.
 
 ## Testing expectations
 
+Build and IDE validation:
+
+- Keep project references explicit for every project that directly uses a type, including test projects. Do not rely on transitive references or previous restore state; Visual Studio design-time builds should compile cleanly after restore.
+- Keep runtime package references explicit in the project that owns the concrete implementation. For example, Infrastructure password hashing must reference `Microsoft.Extensions.Identity.Core` directly because it instantiates ASP.NET Core `PasswordHasher`.
+- Before calling backend work done, run `dotnet build backend\TaskBoard.slnx` from the repository root or `dotnet build TaskBoard.slnx` from `backend`.
+- Then run `dotnet test` from `backend`.
+
 Unit tests:
 
 - Task validation.

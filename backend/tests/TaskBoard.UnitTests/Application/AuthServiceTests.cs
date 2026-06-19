@@ -23,6 +23,7 @@ public sealed class AuthServiceTests
 
         result.IsSuccess.Should().BeTrue();
         result.Value.User.Email.Should().Be("new@example.com");
+        result.Value.User.GetType().GetProperty("PasswordHash").Should().BeNull();
         result.Value.AccessToken.Should().Be("access-token");
         result.Value.RefreshToken.Should().Be("refresh-token");
         _users.Items.Should().ContainSingle(user =>
