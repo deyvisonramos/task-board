@@ -36,6 +36,7 @@ To use them:
 5. Run `POST Login Demo User`.
 6. Copy the `accessToken` response value into the `accessToken` environment variable.
 7. Run `GET Current User` or `GET Private Ping`.
+8. Run `POST Create Task`, then copy its `id` response value into `taskId` before running task get/update/delete requests.
 
 When new API flows are added, update the Thunder Client collection in the same PR so manual verification stays current.
 
@@ -58,6 +59,11 @@ Whenever an essential runtime resource is added, add or update a health check in
 - `GET /api/auth/me`
 - `GET /api/public/ping`
 - `GET /api/private/ping`
+- `GET /api/tasks`
+- `GET /api/tasks/{id}`
+- `POST /api/tasks`
+- `PUT /api/tasks/{id}`
+- `DELETE /api/tasks/{id}`
 - `GET /health`
 - `GET /openapi/v1.json` in Development
 

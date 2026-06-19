@@ -1,6 +1,8 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using TaskBoard.Api.HealthChecks;
 using TaskBoard.Infrastructure;
@@ -9,7 +11,11 @@ using TaskBoard.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddOpenApi();
 builder.Services.AddTaskBoardInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks()
@@ -35,6 +41,20 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(1)
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                var subject = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+                if (!Guid.TryParse(subject, out _))
+                {
+                    context.Fail("The access token subject claim is invalid.");
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
