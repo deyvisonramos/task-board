@@ -9,10 +9,14 @@ namespace TaskBoard.Api.Controllers;
 public sealed class AuthController : ApiControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService)
+    public AuthController(
+        IAuthService authService,
+        ILogger<AuthController> logger)
     {
         _authService = authService;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -22,6 +26,13 @@ public sealed class AuthController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _authService.RegisterAsync(request, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation(
+                "User registered successfully. UserId: {UserId}",
+                result.Value.User.Id);
+        }
 
         return FromResult(result, Ok);
     }
@@ -33,6 +44,19 @@ public sealed class AuthController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _authService.LoginAsync(request, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation(
+                "Login succeeded. UserId: {UserId}",
+                result.Value.User.Id);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Login failed. ErrorCode: {ErrorCode}",
+                result.Error?.Code ?? "Unknown.Error");
+        }
 
         return FromResult(result, Ok);
     }

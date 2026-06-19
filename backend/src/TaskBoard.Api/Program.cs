@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using TaskBoard.Api.HealthChecks;
+using TaskBoard.Api.Middleware;
 using TaskBoard.Api.Responses;
 using TaskBoard.Api.Validation;
 using TaskBoard.Application.Auth;
@@ -103,6 +104,10 @@ if (app.Environment.IsDevelopment())
     await initializer.InitializeAsync();
 }
 
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
@@ -111,9 +116,26 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/api/health", (IHostEnvironment environment) => Results.Ok(new
+{
+    status = "Healthy",
+    application = "TaskBoard",
+    environment = environment.EnvironmentName,
+    timestampUtc = DateTime.UtcNow
+})).AllowAnonymous();
+if (app.Environment.IsEnvironment("Testing"))
+{
+    app.MapGet("/api/test/unhandled-error", ThrowUnhandledError).AllowAnonymous();
+}
+
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapControllers();
 
 app.Run();
+
+static IResult ThrowUnhandledError()
+{
+    throw new InvalidOperationException("Test exception.");
+}
 
 public partial class Program;

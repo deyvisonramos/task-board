@@ -10,10 +10,14 @@ namespace TaskBoard.Api.Controllers;
 public sealed class TasksController : ApiControllerBase
 {
     private readonly ITaskService _taskService;
+    private readonly ILogger<TasksController> _logger;
 
-    public TasksController(ITaskService taskService)
+    public TasksController(
+        ITaskService taskService,
+        ILogger<TasksController> logger)
     {
         _taskService = taskService;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -42,6 +46,14 @@ public sealed class TasksController : ApiControllerBase
         var userId = GetCurrentUserId();
         var result = await _taskService.CreateAsync(userId, request, cancellationToken);
 
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation(
+                "Task created. TaskId: {TaskId}, UserId: {UserId}",
+                result.Value.Id,
+                userId);
+        }
+
         return FromResult(result, value => CreatedAtAction(nameof(Get), new { id = value.Id }, value));
     }
 
@@ -54,6 +66,14 @@ public sealed class TasksController : ApiControllerBase
         var userId = GetCurrentUserId();
         var result = await _taskService.UpdateAsync(userId, id, request, cancellationToken);
 
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation(
+                "Task updated. TaskId: {TaskId}, UserId: {UserId}",
+                id,
+                userId);
+        }
+
         return FromResult(result, Ok);
     }
 
@@ -62,6 +82,14 @@ public sealed class TasksController : ApiControllerBase
     {
         var userId = GetCurrentUserId();
         var result = await _taskService.DeleteAsync(userId, id, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation(
+                "Task deleted. TaskId: {TaskId}, UserId: {UserId}",
+                id,
+                userId);
+        }
 
         return FromResult(result, NoContent);
     }

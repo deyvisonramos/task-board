@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using TaskBoard.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
@@ -15,7 +16,7 @@ public sealed class PostgresFixture : IAsyncLifetime
         await _postgres.StartAsync();
 
         _connectionFactory = new DbConnectionFactory(_postgres.GetConnectionString());
-        var initializer = new DbInitializer(_connectionFactory);
+        var initializer = new DbInitializer(_connectionFactory, NullLogger<DbInitializer>.Instance);
 
         await initializer.InitializeAsync();
     }
@@ -39,7 +40,7 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     public DbInitializer CreateInitializer()
     {
-        return new DbInitializer(ConnectionFactory);
+        return new DbInitializer(ConnectionFactory, NullLogger<DbInitializer>.Instance);
     }
 
     private DbConnectionFactory ConnectionFactory

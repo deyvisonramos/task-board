@@ -69,12 +69,23 @@ When new API flows are added, update the Thunder Client collection in the same P
 The API exposes an anonymous health endpoint:
 
 ```http
+GET /api/health
 GET /health
 ```
 
-The current health check verifies that PostgreSQL is reachable through the configured `DbConnectionFactory`. A healthy application returns HTTP 200 with `Healthy`.
+`GET /api/health` returns lightweight status metadata: status, application name, environment, and UTC timestamp. The compatibility `/health` endpoint uses ASP.NET Core health checks and verifies that PostgreSQL is reachable through the configured `DbConnectionFactory`. A healthy application returns HTTP 200 with `Healthy`.
 
 Whenever an essential runtime resource is added, add or update a health check in the same PR. Essential resources include databases, queues, caches, object storage, external APIs, identity providers, or any dependency whose outage means the application cannot serve its core workflow. Health checks should be covered by integration tests when practical and should avoid leaking secrets or sensitive connection details.
+
+## Observability
+
+Observability is intentionally lightweight. I used built-in ASP.NET Core logging, request/correlation IDs, safe exception logging, a health endpoint, and a frontend error boundary. I avoided heavy infrastructure because the goal of the exercise is code quality, Clean Architecture, CRUD, authentication, testing, and explainability.
+
+Backend requests use an `X-Correlation-ID` response header. If the client sends `X-Correlation-ID`, the API preserves it; otherwise, the API generates one and includes it in structured log scopes. Request logging records method, path, status code, elapsed time, correlation ID, authenticated user ID when available, and whether the request succeeded. Unhandled exceptions are logged server-side and returned as safe ProblemDetails responses with `correlationId` and `traceId`, without exposing stack traces in production.
+
+The frontend includes an ErrorBoundary for unexpected React rendering errors. API errors that include `correlationId`, `traceId`, or the `X-Correlation-ID` response header keep that request ID attached to the rejected error so UI error states can display or retain it.
+
+This project does not include Elasticsearch, Prometheus, Grafana, Jaeger, Application Insights, or cloud-specific telemetry services.
 
 ## API Endpoints
 
@@ -88,6 +99,7 @@ Whenever an essential runtime resource is added, add or update a health check in
 - `POST /api/tasks`
 - `PUT /api/tasks/{id}`
 - `DELETE /api/tasks/{id}`
+- `GET /api/health`
 - `GET /health`
 - `GET /openapi/v1.json` in Development
 

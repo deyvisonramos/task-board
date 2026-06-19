@@ -114,6 +114,20 @@ public sealed class AuthApiTests : IClassFixture<PostgresFixture>, IDisposable
     }
 
     [Fact]
+    public async Task ApiHealthEndpoint_WithoutToken_ReturnsStatusMetadata()
+    {
+        var response = await _client.GetAsync("/api/health");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var json = await ReadJsonAsync(response);
+        json.RootElement.GetProperty("status").GetString().Should().Be("Healthy");
+        json.RootElement.GetProperty("application").GetString().Should().Be("TaskBoard");
+        json.RootElement.GetProperty("environment").GetString().Should().Be("Development");
+        json.RootElement.GetProperty("timestampUtc").GetDateTime().Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(30));
+    }
+
+    [Fact]
     public async Task Me_WithoutToken_ReturnsUnauthorized()
     {
         var response = await _client.GetAsync("/api/auth/me");
