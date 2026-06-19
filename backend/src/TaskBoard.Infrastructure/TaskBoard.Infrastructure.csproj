@@ -1,16 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\TaskBoard.Application\TaskBoard.Application.csproj" />
-    <ProjectReference Include="..\TaskBoard.Domain\TaskBoard.Domain.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.9" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Database\*.sql" CopyToOutputDirectory="PreserveNewest" />
+    <ProjectReference Include="..\TaskBoard.Application\TaskBoard.Application.csproj" />
+    <ProjectReference Include="..\TaskBoard.Domain\TaskBoard.Domain.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -87,3 +87,42 @@ Implement the Infrastructure data layer using PostgreSQL and raw Npgsql, limited
 - Repository writes use Npgsql parameters for user and task values.
 - Task status is stored as the enum name with a database check constraint.
 - `due_date` follows the requested PostgreSQL `date` column type.
+
+## Phase: Authentication Infrastructure
+
+### Prompt used with Codex
+
+Implement authentication infrastructure only: ASP.NET Core password hashing, JWT token creation, options/configuration, dependency injection registration, and focused tests. Do not implement controllers, frontend, repository behavior changes, EF, Dapper, or MediatR.
+
+### Representative generated code
+
+- `TaskBoard.Infrastructure.Auth.PasswordHasher`.
+- `TaskBoard.Infrastructure.Auth.JwtTokenService`.
+- `TaskBoard.Infrastructure.Auth.JwtOptions`.
+- `TaskBoard.Infrastructure.DependencyInjection`.
+- Focused unit tests for password hashing, token claims, token expiration, and DTO password-hash leakage.
+
+### How the output was validated
+
+- `dotnet test` passed the existing tests and the focused auth infrastructure tests.
+
+### What was corrected
+
+- Concrete password hashing and token creation now live in Infrastructure behind Application interfaces.
+- JWT signing configuration is represented through `JwtOptions` and `appsettings.json`.
+
+### Edge cases
+
+- JWT configuration fails fast when the signing key is missing or too short.
+- Refresh tokens are generated separately from access tokens using random bytes.
+
+### Authentication decisions
+
+- Password hashing uses ASP.NET Core `PasswordHasher`.
+- JWT access tokens include issuer, audience, user id (`sub`), email, token id, issued-at, not-before, and expiration claims.
+- Access token expiration is configured in minutes.
+- Refresh token lifetime is configured for future persistence/rotation work, but refresh-token storage is intentionally out of scope for this PR.
+
+### Validation decisions
+
+- Auth API contracts continue to return `UserDto`, which does not expose `PasswordHash`.
