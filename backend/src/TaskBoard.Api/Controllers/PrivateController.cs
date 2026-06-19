@@ -1,12 +1,10 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TaskBoard.Api.Controllers;
 
 [ApiController]
-[AllowAnonymous]
-[Route("api/public")]
-public sealed class PublicController : ControllerBase
+[Route("api/private")]
+public sealed class PrivateController : ControllerBase
 {
     [HttpGet("ping")]
     public IActionResult Ping()

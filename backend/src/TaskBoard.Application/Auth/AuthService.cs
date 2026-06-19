@@ -68,6 +68,22 @@ public sealed class AuthService : IAuthService
         return Result<AuthResponse>.Success(CreateAuthResponse(user));
     }
 
+    public async Task<Result<UserDto>> GetCurrentUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _users.GetByIdAsync(userId, cancellationToken);
+
+        if (user is null)
+        {
+            return Result<UserDto>.Failure(
+                "Auth.UserNotFound",
+                "The current user was not found.");
+        }
+
+        return Result<UserDto>.Success(new UserDto(user.Id, user.Email, user.CreatedAt));
+    }
+
     private static List<ValidationError> ValidateCredentials(string email, string password)
     {
         var errors = new List<ValidationError>();

@@ -126,3 +126,84 @@ Implement authentication infrastructure only: ASP.NET Core password hashing, JWT
 ### Validation decisions
 
 - Auth API contracts continue to return `UserDto`, which does not expose `PasswordHash`.
+
+## Phase: Auth API
+
+### Prompt used with Codex
+
+Implement the Auth API, including Program.cs dependency injection, JWT bearer authentication setup, AuthController, public/private ping endpoints, and API integration tests. Keep controllers thin, call Application services, map Result objects to HTTP responses, avoid SQL/business validation in controllers, do not expose password hashes, and do not use EF, Dapper, or MediatR.
+
+### Representative generated code
+
+- `TaskBoard.Api.Controllers.AuthController`.
+- `TaskBoard.Api.Controllers.PrivateController`.
+- `TaskBoard.Api.Controllers.ApiControllerBase`.
+- `TaskBoard.Api.Responses.ApiErrorResponse`.
+- JWT bearer setup and Infrastructure registration in `Program.cs`.
+- `AuthService.GetCurrentUserAsync`.
+- WebApplicationFactory/Testcontainers-backed auth API integration tests.
+
+### How the output was validated
+
+- `dotnet build backend\TaskBoard.slnx` passed.
+- `dotnet test` from `backend` passed all unit and integration tests.
+
+### What was corrected
+
+- Infrastructure SQL scripts are now copied to build and publish output so startup migrations work from API and test output directories.
+- API integration tests replace the concrete `DbConnectionFactory` in test services so the app startup initializer and repositories use the Testcontainers PostgreSQL connection.
+
+### Edge cases
+
+- Invalid login credentials return 401 without revealing whether the email exists.
+- Anonymous requests to protected endpoints return 401.
+- `/api/auth/me` rejects missing or invalid subject claims through the shared Result-to-response mapper.
+
+### Authentication decisions
+
+- JWT bearer validation uses the configured issuer, audience, signing key, lifetime, and signing key validation.
+- Inbound JWT claim mapping is disabled so the API reads the `sub` claim emitted by `JwtTokenService`.
+- `/api/auth/me` returns `UserDto` only, never password hashes.
+
+### Validation decisions
+
+- Controllers delegate credential validation to `AuthService`.
+- Controller failures use the shared API error response format, including validation code/message arrays when Application services return validation failures.
+
+## Phase: Manual Testing and Health Checks
+
+### Prompt used with Codex
+
+Add a Thunder Client collection for manually calling the API flows and update documentation with those instructions. Add health checks and document that future essential runtime resources should add health checks so the application can report whether it is healthy.
+
+### Representative generated code
+
+- `TaskBoard.Api.HealthChecks.PostgreSqlHealthCheck`.
+- `/health` endpoint registration in `Program.cs`.
+- Thunder Client collection and local environment files under `docs/thunder-client`.
+- README instructions for manual API testing and health-check expectations.
+
+### How the output was validated
+
+- Integration tests include an anonymous `/health` check.
+- Backend build and test commands were run after the change.
+
+### What was corrected
+
+- Health checks are anonymous like public operational endpoints while the default API authorization policy still protects application routes.
+- The PostgreSQL health check uses the existing `DbConnectionFactory` instead of adding a new health-check package.
+
+### Edge cases
+
+- The health endpoint returns unhealthy if PostgreSQL cannot be reached.
+- Protected manual test requests in Thunder Client use an `accessToken` environment variable so the token can be refreshed after login.
+
+### Authentication decisions
+
+- `/health` is explicitly anonymous because it must be callable without a user token.
+- Protected Thunder Client requests include an `Authorization: Bearer {{accessToken}}` header.
+
+### Validation decisions
+
+- Essential runtime dependencies should add health checks in the same PR that introduces them.
+- Health checks should not expose secrets or sensitive connection details.

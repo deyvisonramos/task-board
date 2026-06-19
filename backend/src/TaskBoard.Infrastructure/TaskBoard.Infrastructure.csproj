@@ -9,6 +9,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Database\*.sql" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TaskBoard.Application\TaskBoard.Application.csproj" />
     <ProjectReference Include="..\TaskBoard.Domain\TaskBoard.Domain.csproj" />
   </ItemGroup>

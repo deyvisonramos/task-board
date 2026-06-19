@@ -1,0 +1,205 @@
+{
+  "client": "Thunder Client",
+  "_id": "taskboard-api",
+  "collectionName": "TaskBoard API",
+  "dateExported": "2026-06-19T00:00:00.000Z",
+  "version": "1.2",
+  "folders": [
+    {
+      "_id": "taskboard-folder-health",
+      "name": "Health",
+      "containerId": "",
+      "created": "2026-06-19T00:00:00.000Z",
+      "sortNum": 10000
+    },
+    {
+      "_id": "taskboard-folder-auth",
+      "name": "Auth",
+      "containerId": "",
+      "created": "2026-06-19T00:00:00.000Z",
+      "sortNum": 20000
+    },
+    {
+      "_id": "taskboard-folder-ping",
+      "name": "Ping",
+      "containerId": "",
+      "created": "2026-06-19T00:00:00.000Z",
+      "sortNum": 30000
+    }
+  ],
+  "requests": [
+    {
+      "_id": "taskboard-request-health",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-health",
+      "name": "GET Health",
+      "url": "{{baseUrl}}/health",
+      "method": "GET",
+      "sortNum": 10000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-register",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-auth",
+      "name": "POST Register",
+      "url": "{{baseUrl}}/api/auth/register",
+      "method": "POST",
+      "sortNum": 20000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"manual-user@example.com\",\n  \"password\": \"Password123!\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-login-demo",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-auth",
+      "name": "POST Login Demo User",
+      "url": "{{baseUrl}}/api/auth/login",
+      "method": "POST",
+      "sortNum": 21000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"demo@example.com\",\n  \"password\": \"Demo123!\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-login-manual",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-auth",
+      "name": "POST Login Manual User",
+      "url": "{{baseUrl}}/api/auth/login",
+      "method": "POST",
+      "sortNum": 22000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"manual-user@example.com\",\n  \"password\": \"Password123!\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-me",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-auth",
+      "name": "GET Current User",
+      "url": "{{baseUrl}}/api/auth/me",
+      "method": "GET",
+      "sortNum": 23000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{accessToken}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-public-ping",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-ping",
+      "name": "GET Public Ping",
+      "url": "{{baseUrl}}/api/public/ping",
+      "method": "GET",
+      "sortNum": 30000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-private-ping",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-ping",
+      "name": "GET Private Ping",
+      "url": "{{baseUrl}}/api/private/ping",
+      "method": "GET",
+      "sortNum": 31000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{accessToken}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-openapi",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-health",
+      "name": "GET OpenAPI",
+      "url": "{{baseUrl}}/openapi/v1.json",
+      "method": "GET",
+      "sortNum": 11000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      }
+    }
+  ],
+  "settings": {
+    "headers": [],
+    "tests": []
+  }
+}
