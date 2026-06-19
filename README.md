@@ -27,7 +27,7 @@ Business rules stay out of controllers. Data access stays in Infrastructure. SQL
 - Database: PostgreSQL
 - Data access: raw SQL with Npgsql
 - Auth: JWT access tokens, refresh tokens, ASP.NET Core `PasswordHasher`
-- Frontend: React, TypeScript, Vite, plain CSS
+- Frontend: React, TypeScript, Vite, Tailwind CSS
 - Runtime: Docker Compose
 - Tests: xUnit, Testcontainers
 
@@ -162,6 +162,7 @@ Auth:
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/refresh`
 - `GET /api/auth/me`
 
 Ping and health:
@@ -222,13 +223,12 @@ Protected endpoints require a bearer access token.
 
 ## Error and Validation Format
 
-The API uses a single error response shape for application and validation failures. Validation failures include a `validation` array with item codes and messages. Authentication challenges are handled by ASP.NET Core authentication/authorization middleware rather than controller response helpers.
+The API uses a single error response shape for application, validation, authentication challenge, and unexpected server failures. Validation failures include a `validation` array with item codes and messages. Authentication challenges are handled by ASP.NET Core authentication/authorization middleware rather than controller response helpers.
 
 ## Known Tradeoffs
 
-- The current database initialization uses raw SQL schema and seed scripts in Infrastructure and applies them during Development startup. It is intentionally simple for the interview slice.
-- Tailwind CSS is part of the target exercise stack, but this checkout currently uses plain CSS instead of Tailwind packages.
-- Refresh tokens are returned by auth responses, but the frontend currently stores tokens in `localStorage` for a simple demo workflow.
+- The current database initialization uses timestamped raw SQL migration scripts in Infrastructure and applies them at API startup. It is intentionally simple for the interview slice.
+- Refresh tokens are persisted as hashes and rotated by the API. The frontend stores demo tokens in `localStorage`, which is simple for local review but not the preferred browser storage model for a production app.
 - The frontend is intentionally lightweight: it covers login, registration, dashboard task CRUD, drag-and-drop status changes, loading states, error states, empty states, and responsive layout without adding a larger UI framework.
 - Observability is intentionally minimal: built-in ASP.NET Core logging, correlation IDs, health checks, safe exception handling, and a React error boundary.
 - Docker Compose is the supported full-stack local runtime. Host-side backend and frontend commands are available for the development inner loop.

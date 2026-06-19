@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -44,7 +45,7 @@ public sealed class TasksApiTests : IClassFixture<PostgresFixture>, IDisposable
             title = "Write Task API tests",
             description = "Cover create behavior",
             dueDate = DateTime.UtcNow.AddDays(1),
-            status = TaskItemStatus.Todo
+            status = nameof(TaskItemStatus.Todo)
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -103,7 +104,7 @@ public sealed class TasksApiTests : IClassFixture<PostgresFixture>, IDisposable
             title = "Updated title",
             description = "Updated description",
             dueDate = DateTime.UtcNow.AddDays(2),
-            status = TaskItemStatus.InProgress
+            status = nameof(TaskItemStatus.InProgress)
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -153,7 +154,7 @@ public sealed class TasksApiTests : IClassFixture<PostgresFixture>, IDisposable
             title = "Cross-user update",
             description = "Should not apply",
             dueDate = DateTime.UtcNow.AddDays(2),
-            status = TaskItemStatus.Done
+            status = nameof(TaskItemStatus.Done)
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -188,7 +189,7 @@ public sealed class TasksApiTests : IClassFixture<PostgresFixture>, IDisposable
             title = " ",
             description = "Invalid title",
             dueDate = DateTime.UtcNow.AddDays(1),
-            status = TaskItemStatus.Todo
+            status = nameof(TaskItemStatus.Todo)
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -199,6 +200,34 @@ public sealed class TasksApiTests : IClassFixture<PostgresFixture>, IDisposable
             .EnumerateArray()
             .Should()
             .Contain(item => item.GetProperty("code").GetString() == "Task.TitleRequired");
+    }
+
+    [Fact]
+    public async Task Create_WithInvalidStatus_ReturnsValidationResponse()
+    {
+        await AuthenticateAsync(_client);
+        using var content = new StringContent(
+            """
+            {
+              "title": "Invalid status task",
+              "description": null,
+              "dueDate": "2026-01-01T00:00:00Z",
+              "status": 999
+            }
+            """,
+            Encoding.UTF8,
+            "application/json");
+
+        var response = await _client.PostAsync("/api/tasks", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var json = await ReadJsonAsync(response);
+        json.RootElement.GetProperty("code").GetString().Should().Be("Validation.Failed");
+        json.RootElement.GetProperty("validation")
+            .EnumerateArray()
+            .Should()
+            .Contain(item => item.GetProperty("code").GetString() == "Validation.Invalid");
     }
 
     public void Dispose()
@@ -258,7 +287,7 @@ public sealed class TasksApiTests : IClassFixture<PostgresFixture>, IDisposable
             title,
             description = "Created by integration test",
             dueDate = DateTime.UtcNow.AddDays(1),
-            status = TaskItemStatus.Todo
+            status = nameof(TaskItemStatus.Todo)
         });
         response.EnsureSuccessStatusCode();
 

@@ -71,6 +71,67 @@ public sealed class AuthApiTests : IClassFixture<PostgresFixture>, IDisposable
     }
 
     [Fact]
+    public async Task Register_WithDuplicateEmail_ReturnsBadRequest()
+    {
+        var credentials = await RegisterUserAsync();
+
+        var response = await _client.PostAsJsonAsync("/api/auth/register", credentials);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var json = await ReadJsonAsync(response);
+        json.RootElement.GetProperty("code").GetString().Should().Be("Auth.EmailAlreadyRegistered");
+    }
+
+    [Fact]
+    public async Task Refresh_WithValidRefreshToken_ReturnsNewTokenPair()
+    {
+        var credentials = await RegisterUserAsync();
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", credentials);
+        loginResponse.EnsureSuccessStatusCode();
+        var loginJson = await ReadJsonAsync(loginResponse);
+        var originalRefreshToken = loginJson.RootElement.GetProperty("refreshToken").GetString();
+
+        var response = await _client.PostAsJsonAsync("/api/auth/refresh", new
+        {
+            refreshToken = originalRefreshToken
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var json = await ReadJsonAsync(response);
+        json.RootElement.GetProperty("accessToken").GetString().Should().NotBeNullOrWhiteSpace();
+        json.RootElement.GetProperty("refreshToken").GetString()
+            .Should()
+            .NotBeNullOrWhiteSpace()
+            .And.NotBe(originalRefreshToken);
+        json.RootElement.GetProperty("user").GetProperty("email").GetString().Should().Be(credentials.Email);
+    }
+
+    [Fact]
+    public async Task Refresh_WithReusedRefreshToken_ReturnsBadRequest()
+    {
+        var credentials = await RegisterUserAsync();
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", credentials);
+        loginResponse.EnsureSuccessStatusCode();
+        var loginJson = await ReadJsonAsync(loginResponse);
+        var originalRefreshToken = loginJson.RootElement.GetProperty("refreshToken").GetString();
+
+        var firstRefresh = await _client.PostAsJsonAsync("/api/auth/refresh", new
+        {
+            refreshToken = originalRefreshToken
+        });
+        firstRefresh.EnsureSuccessStatusCode();
+
+        var secondRefresh = await _client.PostAsJsonAsync("/api/auth/refresh", new
+        {
+            refreshToken = originalRefreshToken
+        });
+
+        secondRefresh.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Register_WithInvalidEmail_ReturnsValidationResponse()
     {
         var response = await _client.PostAsJsonAsync("/api/auth/register", new
@@ -94,6 +155,9 @@ public sealed class AuthApiTests : IClassFixture<PostgresFixture>, IDisposable
         var response = await _client.GetAsync("/api/private/ping");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        var json = await ReadJsonAsync(response);
+        json.RootElement.GetProperty("code").GetString().Should().Be("Auth.Unauthorized");
     }
 
     [Fact]

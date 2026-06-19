@@ -8,5 +8,5 @@ public interface IUserRepository
 
     Task<AppUser?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
-    Task AddAsync(AppUser user, CancellationToken cancellationToken = default);
+    Task<bool> AddAsync(AppUser user, CancellationToken cancellationToken = default);
 }

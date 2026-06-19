@@ -58,7 +58,7 @@ public sealed class ObservabilityApiTests : IClassFixture<PostgresFixture>, IDis
     }
 
     [Fact]
-    public async Task UnhandledException_ReturnsProblemDetailsWithCorrelationId()
+    public async Task UnhandledException_ReturnsStandardErrorResponseWithCorrelationHeader()
     {
         const string correlationId = "error-correlation-id";
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/test/unhandled-error");
@@ -67,18 +67,12 @@ public sealed class ObservabilityApiTests : IClassFixture<PostgresFixture>, IDis
         var response = await _client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
-        response.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
 
         var json = await ReadJsonAsync(response);
-        json.RootElement.GetProperty("status").GetInt32()
-            .Should()
-            .Be((int)HttpStatusCode.InternalServerError);
-        json.RootElement.GetProperty("correlationId").GetString()
-            .Should()
-            .Be(correlationId);
-        json.RootElement.GetProperty("traceId").GetString()
-            .Should()
-            .NotBeNullOrWhiteSpace();
+        json.RootElement.GetProperty("code").GetString().Should().Be("Unexpected.Error");
+        json.RootElement.GetProperty("message").GetString().Should().Be("The request failed unexpectedly.");
+        json.RootElement.GetProperty("validation").EnumerateArray().Should().BeEmpty();
         response.Headers.GetValues(CorrelationIdMiddleware.HeaderName)
             .Single()
             .Should()

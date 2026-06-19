@@ -39,3 +39,14 @@ public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
             .WithMessage("Password is required.");
     }
 }
+
+public sealed class RefreshTokenRequestValidator : AbstractValidator<RefreshTokenRequest>
+{
+    public RefreshTokenRequestValidator()
+    {
+        RuleFor(request => request.RefreshToken)
+            .NotEmpty()
+            .WithErrorCode("Auth.RefreshTokenRequired")
+            .WithMessage("Refresh token is required.");
+    }
+}

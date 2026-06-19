@@ -1,3 +1,5 @@
+using TaskBoard.Api.Responses;
+
 namespace TaskBoard.Api.Middleware;
 
 public sealed class ExceptionHandlingMiddleware
@@ -36,18 +38,15 @@ public sealed class ExceptionHandlingMiddleware
                 correlationId);
 
             context.Response.Clear();
-            await Results.Problem(
-                title: "An unexpected error occurred.",
-                detail: _environment.IsDevelopment()
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            await Results.Json(
+                new ApiErrorResponse(
+                    "Unexpected.Error",
+                    _environment.IsDevelopment()
                     ? exception.Message
                     : "The request failed unexpectedly.",
-                statusCode: StatusCodes.Status500InternalServerError,
-                instance: context.Request.Path,
-                extensions: new Dictionary<string, object?>
-                {
-                    ["correlationId"] = correlationId,
-                    ["traceId"] = context.TraceIdentifier
-                }).ExecuteAsync(context);
+                    []),
+                statusCode: StatusCodes.Status500InternalServerError).ExecuteAsync(context);
         }
     }
 

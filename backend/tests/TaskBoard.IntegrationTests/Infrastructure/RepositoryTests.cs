@@ -33,17 +33,17 @@ public sealed class RepositoryTests : IClassFixture<PostgresFixture>
     }
 
     [Fact]
-    public async Task AddUserAsync_WithDuplicateEmail_ThrowsUniqueViolation()
+    public async Task AddUserAsync_WithDuplicateEmail_ReturnsFalse()
     {
         var users = _fixture.CreateUserRepository();
         var email = UniqueEmail();
 
-        await users.AddAsync(NewUser(email: email));
+        var firstResult = await users.AddAsync(NewUser(email: email));
 
-        var action = async () => await users.AddAsync(NewUser(email: email));
+        var secondResult = await users.AddAsync(NewUser(email: email));
 
-        var exception = await action.Should().ThrowAsync<PostgresException>();
-        exception.Which.SqlState.Should().Be(PostgresErrorCodes.UniqueViolation);
+        firstResult.Should().BeTrue();
+        secondResult.Should().BeFalse();
     }
 
     [Fact]
@@ -139,6 +139,37 @@ public sealed class RepositoryTests : IClassFixture<PostgresFixture>
         var result = await tasks.GetByIdAsync(task.Id);
 
         result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RefreshTokenRepository_AddGetAndRevoke_PersistsTokenState()
+    {
+        var users = _fixture.CreateUserRepository();
+        var refreshTokens = _fixture.CreateRefreshTokenRepository();
+        var user = NewUser();
+        var token = new RefreshToken(
+            Guid.NewGuid(),
+            user.Id,
+            $"hash-{Guid.NewGuid():N}",
+            DateTime.UtcNow.AddDays(30),
+            DateTime.UtcNow);
+
+        await users.AddAsync(user);
+        await refreshTokens.AddAsync(token);
+
+        var result = await refreshTokens.GetByTokenHashAsync(token.TokenHash);
+
+        result.Should().NotBeNull();
+        result!.UserId.Should().Be(user.Id);
+        result.IsActive(DateTime.UtcNow).Should().BeTrue();
+
+        await refreshTokens.RevokeAsync(token.Id, DateTime.UtcNow, "replacement-hash");
+
+        var revoked = await refreshTokens.GetByTokenHashAsync(token.TokenHash);
+
+        revoked.Should().NotBeNull();
+        revoked!.IsActive(DateTime.UtcNow).Should().BeFalse();
+        revoked.ReplacedByTokenHash.Should().Be("replacement-hash");
     }
 
     [Fact]

@@ -146,6 +146,29 @@
       }
     },
     {
+      "_id": "taskboard-request-refresh",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-auth",
+      "name": "POST Refresh Token",
+      "url": "{{baseUrl}}/api/auth/refresh",
+      "method": "POST",
+      "sortNum": 22500,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+        "form": []
+      }
+    },
+    {
       "_id": "taskboard-request-public-ping",
       "colId": "taskboard-api",
       "containerId": "taskboard-folder-ping",

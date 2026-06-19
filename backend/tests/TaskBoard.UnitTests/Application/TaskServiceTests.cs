@@ -69,6 +69,22 @@ public sealed class TaskServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_WithInvalidStatus_Fails()
+    {
+        var request = new CreateTaskRequest(
+            "Title",
+            null,
+            DateTime.UtcNow.AddDays(1),
+            (TaskItemStatus)999);
+
+        var result = await _service.CreateAsync(Guid.NewGuid(), request);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ValidationErrors.Should().Contain(error => error.Code == "Task.StatusInvalid");
+        _tasks.Items.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task UpdateAsync_ForOwnTask_Succeeds()
     {
         var userId = Guid.NewGuid();
@@ -150,35 +166,4 @@ public sealed class TaskServiceTests
             now);
     }
 
-    private sealed class InMemoryTaskRepository : ITaskRepository
-    {
-        public List<TaskItem> Items { get; } = [];
-
-        public Task AddAsync(TaskItem taskItem, CancellationToken cancellationToken = default)
-        {
-            Items.Add(taskItem);
-            return Task.CompletedTask;
-        }
-
-        public Task DeleteAsync(TaskItem taskItem, CancellationToken cancellationToken = default)
-        {
-            Items.RemoveAll(existingTask => existingTask.Id == taskItem.Id);
-            return Task.CompletedTask;
-        }
-
-        public Task<TaskItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(Items.SingleOrDefault(task => task.Id == id));
-        }
-
-        public Task<IReadOnlyList<TaskItem>> ListByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult<IReadOnlyList<TaskItem>>(Items.Where(task => task.UserId == userId).ToList());
-        }
-
-        public Task UpdateAsync(TaskItem taskItem, CancellationToken cancellationToken = default)
-        {
-            return Task.CompletedTask;
-        }
-    }
 }

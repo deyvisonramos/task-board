@@ -50,7 +50,7 @@ Implement the Domain and Application layers using TDD for TaskBoard, limited to 
 
 ### Prompt used with Codex
 
-Implement the Infrastructure data layer using PostgreSQL and raw Npgsql, limited to `DbConnectionFactory`, `DbInitializer`, `schema.sql`, `seed.sql`, PostgreSQL task/user repositories, and repository integration tests. Do not implement controllers or frontend code, and do not use EF, Dapper, or MediatR.
+Implement the Infrastructure data layer using PostgreSQL and raw Npgsql, limited to `DbConnectionFactory`, `DbInitializer`, raw SQL migration/seed scripts, PostgreSQL task/user repositories, and repository integration tests. Do not implement controllers or frontend code, and do not use EF, Dapper, or MediatR.
 
 ### Representative generated code
 
@@ -58,7 +58,7 @@ Implement the Infrastructure data layer using PostgreSQL and raw Npgsql, limited
 - `TaskBoard.Infrastructure.Persistence.DbInitializer`.
 - `TaskBoard.Infrastructure.Persistence.UserRepository`.
 - `TaskBoard.Infrastructure.Persistence.TaskRepository`.
-- `Database/schema.sql` and `Database/seed.sql`.
+- Timestamped raw SQL files under `Database/Migrations`.
 - Testcontainers-based repository integration tests.
 
 ### How the output was validated
@@ -121,7 +121,7 @@ Implement authentication infrastructure only: ASP.NET Core password hashing, JWT
 - Password hashing uses ASP.NET Core `PasswordHasher`.
 - JWT access tokens include issuer, audience, user id (`sub`), email, token id, issued-at, not-before, and expiration claims.
 - Access token expiration is configured in minutes.
-- Refresh token lifetime is configured for future persistence/rotation work, but refresh-token storage is intentionally out of scope for this PR.
+- Refresh token lifetime is configured through `JwtOptions`; persistence and rotation were added in a later hardening phase.
 
 ### Validation decisions
 
@@ -155,7 +155,7 @@ Implement the Auth API, including Program.cs dependency injection, JWT bearer au
 
 ### Edge cases
 
-- Invalid login credentials return 401 without revealing whether the email exists.
+- Invalid login credentials return the standard application failure response as `400 Bad Request` without revealing whether the email exists.
 - Anonymous requests to protected endpoints return 401.
 - `/api/auth/me` rejects missing or invalid subject claims through the shared Result-to-response mapper.
 
@@ -431,7 +431,7 @@ Add lightweight observability to TaskBoard without heavy infrastructure: correla
 ### Validation decisions
 
 - The existing API validation response format is unchanged.
-- Unhandled exceptions use safe ProblemDetails responses because they are middleware-owned unexpected failures, not application validation failures.
+- Unhandled exceptions use the standard API error response format with a safe message outside Development.
 
 ## Phase: Frontend Authentication Flow
 
@@ -472,7 +472,7 @@ Implement the frontend authentication flow: login page, register page, auth API 
 ### Authentication decisions
 
 - Tokens are stored in `localStorage` only for this demo/interview slice.
-- The refresh token is stored but not used yet because refresh-token rotation is outside this PR.
+- The Axios client retries one `401 Unauthorized` response by calling `/api/auth/refresh`, then stores the rotated token pair.
 - Successful registration signs the user in immediately and opens the dashboard.
 
 ### Validation decisions
@@ -525,3 +525,51 @@ Implement frontend task CRUD for the authenticated dashboard, including task lis
 - The form uses native required controls for title and due date.
 - Title and description max lengths match the backend rules.
 - Status options are restricted to `Todo`, `InProgress`, and `Done`.
+
+## Phase: Senior Review Hardening
+
+### Prompt used with Codex
+
+Fix the critical, high, medium, and low issues from a senior .NET interviewer review. Keep the diff scoped, do not introduce new libraries unless necessary, do not use EF, Dapper, or MediatR, then run `dotnet test` and `npm run build`.
+
+### Representative generated code
+
+- Refresh-token persistence and rotation through `RefreshToken`, `IRefreshTokenRepository`, `RefreshTokenRepository`, and `POST /api/auth/refresh`.
+- Timestamped raw SQL migration files under `TaskBoard.Infrastructure/Database/Migrations`.
+- FluentValidation validators for task request DTOs and explicit invalid-status handling.
+- Standard API error responses for authentication challenges and unhandled exceptions.
+- Tailwind CSS Vite integration.
+- Frontend refresh-token retry, keyboard status changes, and in-app delete confirmation.
+
+### How the output was validated
+
+- `dotnet test` passed from `backend`.
+- `npm run build` passed from `frontend`.
+- Static package/code search confirmed no EF, Dapper, or MediatR packages were introduced.
+
+### What was corrected
+
+- Refresh tokens are now hashed, persisted, rotated, and rejected after reuse.
+- Numeric or invalid task statuses no longer fall through to database constraint failures.
+- Database scripts are migration-style files discovered in order and tracked through migration history.
+- Reusable unit-test fakes were moved into top-level support files.
+- The frontend now uses Tailwind in the build pipeline and avoids mouse-only task status changes.
+
+### Edge cases
+
+- Duplicate registration still returns the public `Auth.EmailAlreadyRegistered` error even if the database unique constraint wins the race.
+- Reused refresh tokens return `Auth.InvalidRefreshToken`.
+- Anonymous protected requests return a standard `Auth.Unauthorized` response.
+- Invalid task enum JSON returns the shared validation response shape.
+
+### Authentication decisions
+
+- Refresh tokens are stored as SHA-256 hashes because the raw token is high entropy and must not be persisted.
+- The frontend retries one unauthorized request with the stored refresh token, then clears local tokens if refresh fails.
+- Password hashing remains ASP.NET Core `PasswordHasher`.
+
+### Validation decisions
+
+- FluentValidation remains on the 11.x package line.
+- Task validators live beside the task request DTOs in the Application assembly.
+- Domain entities now guard core invariants as a backstop behind request and application validation.

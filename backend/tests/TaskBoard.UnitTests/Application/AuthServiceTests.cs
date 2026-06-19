@@ -7,13 +7,14 @@ namespace TaskBoard.UnitTests.Application;
 public sealed class AuthServiceTests
 {
     private readonly InMemoryUserRepository _users = new();
+    private readonly InMemoryRefreshTokenRepository _refreshTokens = new();
     private readonly FakePasswordHasher _passwordHasher = new();
     private readonly FakeTokenService _tokenService = new();
     private readonly AuthService _service;
 
     public AuthServiceTests()
     {
-        _service = new AuthService(_users, _passwordHasher, _tokenService);
+        _service = new AuthService(_users, _refreshTokens, _passwordHasher, _tokenService);
     }
 
     [Fact]
@@ -24,11 +25,14 @@ public sealed class AuthServiceTests
         result.IsSuccess.Should().BeTrue();
         result.Value.User.Email.Should().Be("new@example.com");
         result.Value.User.GetType().GetProperty("PasswordHash").Should().BeNull();
-        result.Value.AccessToken.Should().Be("access-token");
-        result.Value.RefreshToken.Should().Be("refresh-token");
+        result.Value.AccessToken.Should().Be("access-token-1");
+        result.Value.RefreshToken.Should().Be("refresh-token-1");
         _users.Items.Should().ContainSingle(user =>
             user.Email == "new@example.com" &&
             user.PasswordHash == "hashed:Password123!");
+        _refreshTokens.Items.Should().ContainSingle(token =>
+            token.UserId == result.Value.User.Id &&
+            token.TokenHash == "hash:refresh-token-1");
     }
 
     [Fact]
@@ -52,8 +56,8 @@ public sealed class AuthServiceTests
 
         result.IsSuccess.Should().BeTrue();
         result.Value.User.Email.Should().Be("demo@example.com");
-        result.Value.AccessToken.Should().Be("access-token");
-        result.Value.RefreshToken.Should().Be("refresh-token");
+        result.Value.AccessToken.Should().Be("access-token-1");
+        result.Value.RefreshToken.Should().Be("refresh-token-1");
     }
 
     [Fact]
@@ -67,50 +71,40 @@ public sealed class AuthServiceTests
         result.Error!.Code.Should().Be("Auth.InvalidCredentials");
     }
 
+    [Fact]
+    public async Task RefreshAsync_WithActiveRefreshToken_RotatesToken()
+    {
+        var user = NewUser("demo@example.com", "hashed:Demo123!");
+        _users.Items.Add(user);
+        _refreshTokens.Items.Add(new RefreshToken(
+            Guid.NewGuid(),
+            user.Id,
+            "hash:old-refresh-token",
+            DateTime.UtcNow.AddDays(1),
+            DateTime.UtcNow));
+
+        var result = await _service.RefreshAsync(new RefreshTokenRequest("old-refresh-token"));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.AccessToken.Should().Be("access-token-1");
+        result.Value.RefreshToken.Should().Be("refresh-token-1");
+        _refreshTokens.Items.Should().Contain(token =>
+            token.TokenHash == "hash:old-refresh-token" &&
+            token.RevokedAt != null &&
+            token.ReplacedByTokenHash == "hash:refresh-token-1");
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WithUnknownRefreshToken_Fails()
+    {
+        var result = await _service.RefreshAsync(new RefreshTokenRequest("missing-refresh-token"));
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error!.Code.Should().Be("Auth.InvalidRefreshToken");
+    }
+
     private static AppUser NewUser(string email, string passwordHash)
     {
         return new AppUser(Guid.NewGuid(), email, passwordHash, DateTime.UtcNow);
-    }
-
-    private sealed class InMemoryUserRepository : IUserRepository
-    {
-        public List<AppUser> Items { get; } = [];
-
-        public Task AddAsync(AppUser user, CancellationToken cancellationToken = default)
-        {
-            Items.Add(user);
-            return Task.CompletedTask;
-        }
-
-        public Task<AppUser?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(Items.SingleOrDefault(user => user.Email == email));
-        }
-
-        public Task<AppUser?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(Items.SingleOrDefault(user => user.Id == id));
-        }
-    }
-
-    private sealed class FakePasswordHasher : IPasswordHasher
-    {
-        public string HashPassword(string password)
-        {
-            return $"hashed:{password}";
-        }
-
-        public bool VerifyPassword(string passwordHash, string password)
-        {
-            return passwordHash == $"hashed:{password}";
-        }
-    }
-
-    private sealed class FakeTokenService : ITokenService
-    {
-        public TokenPair CreateTokens(AppUser user)
-        {
-            return new TokenPair("access-token", "refresh-token");
-        }
     }
 }

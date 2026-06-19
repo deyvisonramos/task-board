@@ -48,7 +48,7 @@ public sealed class UserRepository : IUserRepository
         return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
     }
 
-    public async Task AddAsync(AppUser user, CancellationToken cancellationToken = default)
+    public async Task<bool> AddAsync(AppUser user, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
         await using var command = connection.CreateCommand();
@@ -66,7 +66,15 @@ public sealed class UserRepository : IUserRepository
             Value = ToUtc(user.CreatedAt)
         });
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        try
+        {
+            await command.ExecuteNonQueryAsync(cancellationToken);
+            return true;
+        }
+        catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            return false;
+        }
     }
 
     private static AppUser MapUser(NpgsqlDataReader reader)

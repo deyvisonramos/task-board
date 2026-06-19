@@ -1,14 +1,11 @@
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace TaskBoard.Infrastructure.Persistence;
 
 public sealed class DbInitializer
 {
-    private static readonly string[] ScriptNames =
-    [
-        "schema.sql",
-        "seed.sql"
-    ];
+    private const string MigrationDirectoryName = "Migrations";
 
     private readonly DbConnectionFactory _connectionFactory;
     private readonly ILogger<DbInitializer> _logger;
@@ -30,9 +27,9 @@ public sealed class DbInitializer
             await EnsureDatabaseExistsAsync(cancellationToken);
             await EnsureMigrationHistoryTableAsync(cancellationToken);
 
-            foreach (var scriptName in ScriptNames)
+            foreach (var scriptPath in GetMigrationScriptPaths())
             {
-                await ExecuteScriptAsync(scriptName, cancellationToken);
+                await ExecuteScriptAsync(scriptPath, cancellationToken);
             }
 
             _logger.LogInformation("Database initialization completed.");
@@ -46,7 +43,29 @@ public sealed class DbInitializer
 
     private async Task EnsureDatabaseExistsAsync(CancellationToken cancellationToken)
     {
-        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+        var builder = new NpgsqlConnectionStringBuilder(_connectionFactory.ConnectionString);
+        var databaseName = builder.Database;
+
+        if (string.IsNullOrWhiteSpace(databaseName))
+        {
+            throw new InvalidOperationException("PostgreSQL database name is required.");
+        }
+
+        builder.Database = "postgres";
+
+        await using var connection = new NpgsqlConnection(builder.ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        if (await DatabaseExistsAsync(connection, databaseName, cancellationToken))
+        {
+            return;
+        }
+
+        _logger.LogInformation("Creating PostgreSQL database. DatabaseName: {DatabaseName}", databaseName);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"create database {QuoteIdentifier(databaseName)};";
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private async Task EnsureMigrationHistoryTableAsync(CancellationToken cancellationToken)
@@ -65,9 +84,9 @@ public sealed class DbInitializer
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private async Task ExecuteScriptAsync(string scriptName, CancellationToken cancellationToken)
+    private async Task ExecuteScriptAsync(string scriptPath, CancellationToken cancellationToken)
     {
-        var scriptPath = Path.Combine(AppContext.BaseDirectory, "Database", scriptName);
+        var scriptName = Path.GetFileName(scriptPath);
 
         if (!File.Exists(scriptPath))
         {
@@ -100,9 +119,42 @@ public sealed class DbInitializer
         _logger.LogInformation("Database seed or migration script applied. ScriptName: {ScriptName}", scriptName);
     }
 
+    private static IReadOnlyList<string> GetMigrationScriptPaths()
+    {
+        var migrationsPath = Path.Combine(AppContext.BaseDirectory, "Database", MigrationDirectoryName);
+
+        if (!Directory.Exists(migrationsPath))
+        {
+            throw new DirectoryNotFoundException($"Database migrations folder '{migrationsPath}' was not found.");
+        }
+
+        return Directory
+            .EnumerateFiles(migrationsPath, "*.sql", SearchOption.TopDirectoryOnly)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static async Task<bool> DatabaseExistsAsync(
+        NpgsqlConnection connection,
+        string databaseName,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            select exists(
+                select 1
+                from pg_database
+                where datname = @database_name
+            );
+            """;
+        command.Parameters.AddWithValue("database_name", databaseName);
+
+        return (bool)(await command.ExecuteScalarAsync(cancellationToken) ?? false);
+    }
+
     private static async Task<bool> WasScriptAppliedAsync(
-        Npgsql.NpgsqlConnection connection,
-        Npgsql.NpgsqlTransaction transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
         string scriptName,
         CancellationToken cancellationToken)
     {
@@ -121,8 +173,8 @@ public sealed class DbInitializer
     }
 
     private static async Task RecordScriptAppliedAsync(
-        Npgsql.NpgsqlConnection connection,
-        Npgsql.NpgsqlTransaction transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
         string scriptName,
         CancellationToken cancellationToken)
     {
@@ -136,5 +188,10 @@ public sealed class DbInitializer
         command.Parameters.AddWithValue("applied_at", DateTime.UtcNow);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static string QuoteIdentifier(string identifier)
+    {
+        return "\"" + identifier.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
     }
 }

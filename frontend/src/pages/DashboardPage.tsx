@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getFriendlyApiError } from '../api/apiError'
 import {
   tasksApi,
@@ -53,8 +53,13 @@ export function DashboardPage() {
   const [draggedTask, setDraggedTask] = useState<TaskResponse | null>(null)
   const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null)
   const [modalTask, setModalTask] = useState<TaskResponse | null>(null)
+  const [deleteCandidate, setDeleteCandidate] = useState<TaskResponse | null>(
+    null,
+  )
   const [error, setError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  const modalPanelRef = useRef<HTMLDivElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
 
   const modalTitle = useMemo(() => {
     if (modalMode === 'edit') {
@@ -91,6 +96,34 @@ export function DashboardPage() {
       isMounted = false
     }
   }, [])
+
+  useEffect(() => {
+    const hasOpenDialog = Boolean(modalMode || deleteCandidate)
+
+    if (!hasOpenDialog) {
+      return
+    }
+
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+    modalPanelRef.current?.focus()
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        closeActiveDialog()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      previousFocusRef.current?.focus()
+      previousFocusRef.current = null
+    }
+  }, [modalMode, deleteCandidate])
 
   async function handleRefresh() {
     setIsLoading(true)
@@ -201,13 +234,16 @@ export function DashboardPage() {
     await handleStatusChange(draggedTask, status)
   }
 
-  async function handleDeleteTask(task: TaskResponse) {
-    const confirmed = window.confirm(`Delete "${task.title}"?`)
+  async function requestDeleteTask(task: TaskResponse) {
+    setDeleteCandidate(task)
+  }
 
-    if (!confirmed) {
+  async function confirmDeleteTask() {
+    if (!deleteCandidate) {
       return
     }
 
+    const task = deleteCandidate
     setError(null)
     setBusyTaskId(task.id)
 
@@ -221,6 +257,8 @@ export function DashboardPage() {
         setModalMode(null)
         setModalTask(null)
       }
+
+      setDeleteCandidate(null)
     } catch (requestError) {
       setError(getFriendlyApiError(requestError))
     } finally {
@@ -244,6 +282,19 @@ export function DashboardPage() {
     setFormError(null)
     setModalMode(null)
     setModalTask(null)
+  }
+
+  function closeDeleteDialog() {
+    setDeleteCandidate(null)
+  }
+
+  function closeActiveDialog() {
+    if (deleteCandidate) {
+      closeDeleteDialog()
+      return
+    }
+
+    closeTaskModal()
   }
 
   return (
@@ -297,11 +348,12 @@ export function DashboardPage() {
           ) : (
             <TaskList
               busyTaskId={busyTaskId}
-              onDelete={handleDeleteTask}
+              onDelete={requestDeleteTask}
               onDragEnd={() => setDraggedTask(null)}
               onDragStart={setDraggedTask}
               onDropTask={handleDropTask}
               onEdit={openEditModal}
+              onStatusChange={handleStatusChange}
               tasks={tasks}
             />
           )}
@@ -315,7 +367,7 @@ export function DashboardPage() {
           className="modal-backdrop"
           role="dialog"
         >
-          <div className="modal-panel">
+          <div className="modal-panel" ref={modalPanelRef} tabIndex={-1}>
             <div className="modal-header">
               <div>
                 <p className="page-kicker">Task details</p>
@@ -356,6 +408,57 @@ export function DashboardPage() {
                     : Promise.resolve(false)
               }
             />
+          </div>
+        </div>
+      ) : null}
+
+      {deleteCandidate ? (
+        <div
+          aria-labelledby="delete-modal-title"
+          aria-modal="true"
+          className="modal-backdrop"
+          role="dialog"
+        >
+          <div className="modal-panel modal-panel-compact" ref={modalPanelRef} tabIndex={-1}>
+            <div className="modal-header">
+              <div>
+                <p className="page-kicker">Delete task</p>
+                <h2 id="delete-modal-title" className="panel-title">
+                  Confirm delete
+                </h2>
+              </div>
+              <button
+                aria-label="Close delete confirmation"
+                className="icon-button"
+                onClick={closeDeleteDialog}
+                type="button"
+              >
+                x
+              </button>
+            </div>
+
+            <p className="page-description">
+              Delete "{deleteCandidate.title}"?
+            </p>
+
+            <div className="task-form-actions">
+              <button
+                className="secondary-button"
+                disabled={busyTaskId === deleteCandidate.id}
+                onClick={closeDeleteDialog}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="danger-button"
+                disabled={busyTaskId === deleteCandidate.id}
+                onClick={() => void confirmDeleteTask()}
+                type="button"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

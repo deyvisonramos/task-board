@@ -22,7 +22,7 @@ builder.Services.AddControllers(options =>
 })
 .AddJsonOptions(options =>
 {
-    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
 })
 .ConfigureApiBehaviorOptions(options =>
 {
@@ -97,6 +97,27 @@ builder.Services
                 }
 
                 return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                return context.Response.WriteAsJsonAsync(new ApiErrorResponse(
+                    "Auth.Unauthorized",
+                    "Authentication is required.",
+                    []));
+            },
+            OnForbidden = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json";
+
+                return context.Response.WriteAsJsonAsync(new ApiErrorResponse(
+                    "Auth.Forbidden",
+                    "The authenticated user is not allowed to access this resource.",
+                    []));
             }
         };
     });
@@ -113,8 +134,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi().AllowAnonymous();
+}
 
-    using var scope = app.Services.CreateScope();
+using (var scope = app.Services.CreateScope())
+{
     var initializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
     await initializer.InitializeAsync();
 }

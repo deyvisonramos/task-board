@@ -61,6 +61,30 @@ public sealed class AuthController : ApiControllerBase
         return FromResult(result, Ok);
     }
 
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Refresh(
+        RefreshTokenRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _authService.RefreshAsync(request, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation(
+                "Token refresh succeeded. UserId: {UserId}",
+                result.Value.User.Id);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Token refresh failed. ErrorCode: {ErrorCode}",
+                result.Error?.Code ?? "Unknown.Error");
+        }
+
+        return FromResult(result, Ok);
+    }
+
     [HttpGet("me")]
     public async Task<IActionResult> Me(CancellationToken cancellationToken)
     {

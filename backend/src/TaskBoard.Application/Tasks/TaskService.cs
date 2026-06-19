@@ -5,8 +5,8 @@ namespace TaskBoard.Application.Tasks;
 
 public sealed class TaskService : ITaskService
 {
-    public const int TitleMaxLength = 100;
-    public const int DescriptionMaxLength = 1000;
+    public const int TitleMaxLength = TaskItem.TitleMaxLength;
+    public const int DescriptionMaxLength = TaskItem.DescriptionMaxLength;
 
     private readonly ITaskRepository _tasks;
 
@@ -44,7 +44,7 @@ public sealed class TaskService : ITaskService
         CreateTaskRequest request,
         CancellationToken cancellationToken = default)
     {
-        var validationErrors = Validate(request.Title, request.Description, request.DueDate);
+        var validationErrors = Validate(request.Title, request.Description, request.DueDate, request.Status);
 
         if (validationErrors.Count > 0)
         {
@@ -73,7 +73,7 @@ public sealed class TaskService : ITaskService
         UpdateTaskRequest request,
         CancellationToken cancellationToken = default)
     {
-        var validationErrors = Validate(request.Title, request.Description, request.DueDate);
+        var validationErrors = Validate(request.Title, request.Description, request.DueDate, request.Status);
 
         if (validationErrors.Count > 0)
         {
@@ -116,7 +116,11 @@ public sealed class TaskService : ITaskService
         return Result.Success();
     }
 
-    private static List<ValidationError> Validate(string title, string? description, DateTime? dueDate)
+    private static List<ValidationError> Validate(
+        string title,
+        string? description,
+        DateTime? dueDate,
+        TaskItemStatus status = TaskItemStatus.Todo)
     {
         var errors = new List<ValidationError>();
 
@@ -139,6 +143,11 @@ public sealed class TaskService : ITaskService
         if (dueDate is null)
         {
             errors.Add(new ValidationError("Task.DueDateRequired", "Due date is required."));
+        }
+
+        if (!Enum.IsDefined(status))
+        {
+            errors.Add(new ValidationError("Task.StatusInvalid", "Status is invalid."));
         }
 
         return errors;

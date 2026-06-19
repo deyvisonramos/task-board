@@ -1,5 +1,9 @@
 import type { DragEvent } from 'react'
-import type { TaskResponse } from '../../api/tasksApi'
+import {
+  TASK_STATUSES,
+  type TaskResponse,
+  type TaskStatus,
+} from '../../api/tasksApi'
 import { formatDueDate } from './taskDate'
 
 type TaskCardProps = {
@@ -8,6 +12,7 @@ type TaskCardProps = {
   onDragEnd: () => void
   onDragStart: (task: TaskResponse) => void
   onEdit: (task: TaskResponse) => void
+  onStatusChange: (task: TaskResponse, status: TaskStatus) => Promise<void>
   task: TaskResponse
 }
 
@@ -17,6 +22,7 @@ export function TaskCard({
   onDragEnd,
   onDragStart,
   onEdit,
+  onStatusChange,
   task,
 }: TaskCardProps) {
   function handleDragStart(event: DragEvent<HTMLElement>) {
@@ -46,6 +52,23 @@ export function TaskCard({
       )}
 
       <p className="task-card-meta">Due {formatDueDate(task.dueDate)}</p>
+
+      <label className="task-card-status-control">
+        <span>Move to</span>
+        <select
+          disabled={isSubmitting}
+          onChange={(event) =>
+            void onStatusChange(task, event.target.value as TaskStatus)
+          }
+          value={task.status}
+        >
+          {TASK_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <div className="task-card-actions">
         <button

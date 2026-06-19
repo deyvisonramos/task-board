@@ -5,4 +5,6 @@ namespace TaskBoard.Application.Auth;
 public interface ITokenService
 {
     TokenPair CreateTokens(AppUser user);
+
+    string HashRefreshToken(string refreshToken);
 }

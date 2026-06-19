@@ -12,6 +12,7 @@ type TaskListProps = {
   onDragStart: (task: TaskResponse) => void
   onEdit: (task: TaskResponse) => void
   onDropTask: (status: TaskStatus) => Promise<void>
+  onStatusChange: (task: TaskResponse, status: TaskStatus) => Promise<void>
   tasks: TaskResponse[]
 }
 
@@ -28,6 +29,7 @@ export function TaskList({
   onDragStart,
   onEdit,
   onDropTask,
+  onStatusChange,
   tasks,
 }: TaskListProps) {
   if (tasks.length === 0) {
@@ -68,6 +70,7 @@ export function TaskList({
                     onDragEnd={onDragEnd}
                     onDragStart={onDragStart}
                     onEdit={onEdit}
+                    onStatusChange={onStatusChange}
                     task={task}
                   />
                 ))}

@@ -39,6 +39,11 @@ public sealed class JwtTokenServiceTests
         (expiresAt - issuedAt).Should().Be(1_800);
         tokens.RefreshToken.Should().NotBeNullOrWhiteSpace();
         tokens.RefreshToken.Should().NotBe(tokens.AccessToken);
+        tokens.RefreshTokenHash.Should().NotBeNullOrWhiteSpace();
+        tokens.RefreshTokenHash.Should().NotBe(tokens.RefreshToken);
+        tokens.RefreshTokenHash.Should().Be(service.HashRefreshToken(tokens.RefreshToken));
+        tokens.RefreshTokenExpiresAt.Should().BeAfter(DateTime.UtcNow.AddDays(13));
+        tokens.RefreshTokenExpiresAt.Should().BeBefore(DateTime.UtcNow.AddDays(15));
     }
 
     [Fact]

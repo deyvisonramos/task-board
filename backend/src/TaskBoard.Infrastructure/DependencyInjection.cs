@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddSingleton(new DbConnectionFactory(connectionString));
         services.AddScoped<DbInitializer>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<ITaskRepository, TaskRepository>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();

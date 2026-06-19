@@ -29,6 +29,7 @@ public sealed class JwtTokenService : ITokenService
     {
         var now = _timeProvider.GetUtcNow();
         var expires = now.AddMinutes(_options.AccessTokenExpirationMinutes);
+        var refreshToken = CreateRefreshToken();
 
         var header = new Dictionary<string, object>
         {
@@ -48,7 +49,18 @@ public sealed class JwtTokenService : ITokenService
             ["exp"] = expires.ToUnixTimeSeconds()
         };
 
-        return new TokenPair(CreateJwt(header, payload), CreateRefreshToken());
+        return new TokenPair(
+            CreateJwt(header, payload),
+            refreshToken,
+            HashRefreshToken(refreshToken),
+            now.AddDays(_options.RefreshTokenExpirationDays).UtcDateTime);
+    }
+
+    public string HashRefreshToken(string refreshToken)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken));
+
+        return Base64UrlEncode(hash);
     }
 
     private string CreateJwt(
