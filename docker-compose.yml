@@ -3,11 +3,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    environment:
-      VITE_API_BASE_URL: http://localhost:5141
+      args:
+        VITE_API_BASE_URL: http://localhost:5141
     ports:
-      - "5173:5173"
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+      - "5173:80"
     depends_on:
       api:
         condition: service_started

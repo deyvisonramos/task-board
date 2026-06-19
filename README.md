@@ -10,7 +10,7 @@ Start the local application stack from the repository root:
 docker compose up -d
 ```
 
-This starts PostgreSQL, the ASP.NET Core API, and the React frontend.
+This starts PostgreSQL, the ASP.NET Core API, and the built React frontend served by nginx.
 
 - Frontend: `http://localhost:5173`
 - API: `http://localhost:5141`
@@ -147,7 +147,7 @@ Run the development server:
 npm run dev
 ```
 
-The same frontend is also part of the root Docker Compose stack and is exposed at `http://localhost:5173`.
+The same frontend is also part of the root Docker Compose stack as a production-style static build and is exposed at `http://localhost:5173`.
 
 Build the frontend:
 
@@ -159,6 +159,6 @@ Current routes:
 
 - `/login` for the seeded demo user or registered accounts.
 - `/register` to create an account and sign in automatically.
-- `/dashboard`, protected by the frontend auth state.
+- `/dashboard`, protected by the frontend auth state, for listing, modal create/edit, delete, and drag-and-drop status updates.
 
 The frontend stores demo access and refresh tokens in `localStorage` for this interview slice and sends the access token as a bearer token on API requests.

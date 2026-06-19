@@ -480,3 +480,48 @@ Implement the frontend authentication flow: login page, register page, auth API 
 - The frontend relies on native required/email inputs for basic usability.
 - API validation messages are surfaced through the shared auth form error state.
 - Task CRUD remains out of scope for this phase.
+
+## Phase: Frontend Task CRUD
+
+### Prompt used with Codex
+
+Implement frontend task CRUD for the authenticated dashboard, including task list, create/edit/delete forms, status selector, due date input, empty/loading/error states, responsive layout, API token attachment from auth state, organized components, and `npm run build` validation. Do not send `UserId` from the frontend and do not add a heavy UI framework.
+
+### Representative generated code
+
+- `frontend/src/pages/DashboardPage.tsx` for task loading and mutation state.
+- `frontend/src/components/tasks/TaskForm.tsx`.
+- `frontend/src/components/tasks/TaskList.tsx`.
+- `frontend/src/components/tasks/TaskCard.tsx`.
+- `frontend/src/components/tasks/taskDate.ts`.
+- Task API type alignment in `frontend/src/api/tasksApi.ts`.
+
+### How the output was validated
+
+- `npm run build` passed from `frontend`.
+
+### What was corrected
+
+- The frontend task response type now allows nullable descriptions, matching the API.
+- Browser `datetime-local` values are converted to UTC ISO timestamps before create/update requests.
+- Edit failures are shown with the board error state instead of the create form error state.
+- Follow-up UI feedback moved create/edit into a modal, removed redundant dashboard counters, and changed visible status updates from card dropdowns to drag-and-drop between lanes.
+
+### Edge cases
+
+- Empty task lists show an empty state.
+- Initial task loading shows a loading state.
+- List, create, update, status-change, and delete failures show friendly API errors.
+- Blank descriptions are sent as `null`.
+- Dragging a task back to its current lane does not call the API.
+
+### Authentication decisions
+
+- Task requests use the existing Axios interceptor, which attaches the stored access token from auth state.
+- Create and update request payloads include title, description, dueDate, and status only; ownership remains server-derived from the JWT subject.
+
+### Validation decisions
+
+- The form uses native required controls for title and due date.
+- Title and description max lengths match the backend rules.
+- Status options are restricted to `Todo`, `InProgress`, and `Done`.

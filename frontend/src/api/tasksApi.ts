@@ -2,11 +2,13 @@ import { httpClient } from './httpClient'
 
 export type TaskStatus = 'Todo' | 'InProgress' | 'Done'
 
+export const TASK_STATUSES: TaskStatus[] = ['Todo', 'InProgress', 'Done']
+
 export type TaskResponse = {
   id: string
   userId: string
   title: string
-  description: string
+  description: string | null
   status: TaskStatus
   dueDate: string
   createdAt: string
@@ -15,7 +17,7 @@ export type TaskResponse = {
 
 export type CreateTaskRequest = {
   title: string
-  description: string
+  description: string | null
   status: TaskStatus
   dueDate: string
 }
