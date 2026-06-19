@@ -45,3 +45,45 @@ Implement the Domain and Application layers using TDD for TaskBoard, limited to 
 - Application services return a shared `Result` type.
 - Validation failures include code/message pairs.
 - Ownership failures currently return `Task.NotFound` to avoid leaking task existence across users.
+
+## Phase: Infrastructure Data Layer
+
+### Prompt used with Codex
+
+Implement the Infrastructure data layer using PostgreSQL and raw Npgsql, limited to `DbConnectionFactory`, `DbInitializer`, `schema.sql`, `seed.sql`, PostgreSQL task/user repositories, and repository integration tests. Do not implement controllers or frontend code, and do not use EF, Dapper, or MediatR.
+
+### Representative generated code
+
+- `TaskBoard.Infrastructure.Persistence.DbConnectionFactory`.
+- `TaskBoard.Infrastructure.Persistence.DbInitializer`.
+- `TaskBoard.Infrastructure.Persistence.PostgresUserRepository`.
+- `TaskBoard.Infrastructure.Persistence.PostgresTaskRepository`.
+- `Database/schema.sql` and `Database/seed.sql`.
+- Testcontainers-based repository integration tests.
+
+### How the output was validated
+
+- `dotnet test` passed the existing unit tests and the new Testcontainers-backed PostgreSQL repository and initializer integration tests.
+- A static search confirmed SQL statements are confined to the Infrastructure project.
+
+### What was corrected
+
+- Repository tests avoid cleanup SQL in the test project by using unique test records.
+- The initializer verifies the target database connection, ensures a migration history table exists, and records applied schema/seed scripts so they are not re-run.
+
+### Edge cases
+
+- Duplicate user email is enforced by the PostgreSQL unique constraint and covered by an integration test.
+- Task listing filters by `user_id` and does not return another user's tasks.
+- Nullable task descriptions and nullable `updated_at` seed values are mapped safely.
+
+### Authentication decisions
+
+- The demo user is seeded with an ASP.NET Core Identity-compatible password hash for `Demo123!`.
+- Password hashes remain repository data and are not exposed through API contracts in this phase.
+
+### Validation decisions
+
+- Repository writes use Npgsql parameters for user and task values.
+- Task status is stored as the enum name with a database check constraint.
+- `due_date` follows the requested PostgreSQL `date` column type.
