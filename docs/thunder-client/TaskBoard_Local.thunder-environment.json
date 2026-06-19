@@ -1,0 +1,17 @@
+{
+  "client": "Thunder Client",
+  "_id": "taskboard-local",
+  "environmentName": "TaskBoard Local",
+  "dateExported": "2026-06-19T00:00:00.000Z",
+  "version": "1.0",
+  "variables": [
+    {
+      "name": "baseUrl",
+      "value": "http://localhost:5141"
+    },
+    {
+      "name": "accessToken",
+      "value": ""
+    }
+  ]
+}

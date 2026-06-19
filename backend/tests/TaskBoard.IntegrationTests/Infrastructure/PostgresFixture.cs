@@ -35,6 +35,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         return new TaskRepository(ConnectionFactory);
     }
 
+    public string ConnectionString => ConnectionFactory.ConnectionString;
+
     public DbInitializer CreateInitializer()
     {
         return new DbInitializer(ConnectionFactory);
