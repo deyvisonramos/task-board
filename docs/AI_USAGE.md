@@ -56,8 +56,8 @@ Implement the Infrastructure data layer using PostgreSQL and raw Npgsql, limited
 
 - `TaskBoard.Infrastructure.Persistence.DbConnectionFactory`.
 - `TaskBoard.Infrastructure.Persistence.DbInitializer`.
-- `TaskBoard.Infrastructure.Persistence.PostgresUserRepository`.
-- `TaskBoard.Infrastructure.Persistence.PostgresTaskRepository`.
+- `TaskBoard.Infrastructure.Persistence.UserRepository`.
+- `TaskBoard.Infrastructure.Persistence.TaskRepository`.
 - `Database/schema.sql` and `Database/seed.sql`.
 - Testcontainers-based repository integration tests.
 

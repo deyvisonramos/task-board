@@ -3,15 +3,14 @@ using Npgsql;
 using TaskBoard.Domain.Tasks;
 using TaskBoard.Domain.Users;
 using TaskBoard.Infrastructure.Persistence;
-using Testcontainers.PostgreSql;
 
 namespace TaskBoard.IntegrationTests.Infrastructure;
 
-public sealed class PostgresRepositoryTests : IClassFixture<PostgresRepositoryTests.PostgresFixture>
+public sealed class RepositoryTests : IClassFixture<PostgresFixture>
 {
     private readonly PostgresFixture _fixture;
 
-    public PostgresRepositoryTests(PostgresFixture fixture)
+    public RepositoryTests(PostgresFixture fixture)
     {
         _fixture = fixture;
     }
@@ -179,56 +178,5 @@ public sealed class PostgresRepositoryTests : IClassFixture<PostgresRepositoryTe
     private static string UniqueEmail()
     {
         return $"{Guid.NewGuid():N}@example.com";
-    }
-
-    public sealed class PostgresFixture : IAsyncLifetime
-    {
-        private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine")
-            .Build();
-
-        private DbConnectionFactory? _connectionFactory;
-
-        public async Task InitializeAsync()
-        {
-            await _postgres.StartAsync();
-
-            _connectionFactory = new DbConnectionFactory(_postgres.GetConnectionString());
-            var initializer = new DbInitializer(_connectionFactory);
-
-            await initializer.InitializeAsync();
-        }
-
-        public async Task DisposeAsync()
-        {
-            await _postgres.DisposeAsync();
-        }
-
-        public PostgresUserRepository CreateUserRepository()
-        {
-            return new PostgresUserRepository(ConnectionFactory);
-        }
-
-        public PostgresTaskRepository CreateTaskRepository()
-        {
-            return new PostgresTaskRepository(ConnectionFactory);
-        }
-
-        public DbInitializer CreateInitializer()
-        {
-            return new DbInitializer(ConnectionFactory);
-        }
-
-        private DbConnectionFactory ConnectionFactory
-        {
-            get
-            {
-                if (_connectionFactory is null)
-                {
-                    throw new InvalidOperationException("PostgreSQL fixture has not been initialized.");
-                }
-
-                return _connectionFactory;
-            }
-        }
     }
 }

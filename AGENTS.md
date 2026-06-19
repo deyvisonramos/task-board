@@ -55,6 +55,11 @@ Runtime and deployment:
 - The application should be runnable locally through Docker Compose.
 - Backend tests should use Testcontainers for integration-test PostgreSQL dependencies.
 
+Code organization and naming:
+
+- Concrete repository classes should be named by their domain role, for example `TaskRepository` and `UserRepository`; do not prefix them with the storage provider such as `Postgres`.
+- Keep each top-level class in its own file. Test fixtures and reusable test support classes should be separate top-level files, not nested classes inside test classes.
+
 ## Business domain
 
 The app manages tasks.

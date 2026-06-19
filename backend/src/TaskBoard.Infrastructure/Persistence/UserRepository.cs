@@ -5,11 +5,11 @@ using TaskBoard.Domain.Users;
 
 namespace TaskBoard.Infrastructure.Persistence;
 
-public sealed class PostgresUserRepository : IUserRepository
+public sealed class UserRepository : IUserRepository
 {
     private readonly DbConnectionFactory _connectionFactory;
 
-    public PostgresUserRepository(DbConnectionFactory connectionFactory)
+    public UserRepository(DbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory;
     }
