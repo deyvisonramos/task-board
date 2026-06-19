@@ -1,22 +1,49 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using TaskBoard.Api.HealthChecks;
+using TaskBoard.Api.Responses;
+using TaskBoard.Api.Validation;
+using TaskBoard.Application.Auth;
 using TaskBoard.Infrastructure;
 using TaskBoard.Infrastructure.Auth;
 using TaskBoard.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<FluentValidationActionFilter>();
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+})
+.ConfigureApiBehaviorOptions(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
     {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
+        var validationErrors = context.ModelState.Values
+            .SelectMany(entry => entry.Errors)
+            .Select(error => new ValidationErrorResponse(
+                "Validation.Invalid",
+                string.IsNullOrWhiteSpace(error.ErrorMessage)
+                    ? "The request is invalid."
+                    : error.ErrorMessage))
+            .ToArray();
+
+        return new BadRequestObjectResult(new ApiErrorResponse(
+            "Validation.Failed",
+            "Validation failed.",
+            validationErrors));
+    };
+});
 builder.Services.AddOpenApi();
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 builder.Services.AddTaskBoardInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddCheck<PostgreSqlHealthCheck>("postgresql");
@@ -46,11 +73,11 @@ builder.Services
         {
             OnTokenValidated = context =>
             {
-                var subject = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                var subject = context.Principal?.FindFirst("sub")?.Value;
 
                 if (!Guid.TryParse(subject, out _))
                 {
-                    context.Fail("The access token subject claim is invalid.");
+                    context.Fail("The access token subject is invalid.");
                 }
 
                 return Task.CompletedTask;

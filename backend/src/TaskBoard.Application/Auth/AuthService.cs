@@ -23,13 +23,6 @@ public sealed class AuthService : IAuthService
         RegisterRequest request,
         CancellationToken cancellationToken = default)
     {
-        var validationErrors = ValidateCredentials(request.Email, request.Password);
-
-        if (validationErrors.Count > 0)
-        {
-            return Result<AuthResponse>.ValidationFailure(validationErrors);
-        }
-
         var email = NormalizeEmail(request.Email);
         var existingUser = await _users.GetByEmailAsync(email, cancellationToken);
 
@@ -82,23 +75,6 @@ public sealed class AuthService : IAuthService
         }
 
         return Result<UserDto>.Success(new UserDto(user.Id, user.Email, user.CreatedAt));
-    }
-
-    private static List<ValidationError> ValidateCredentials(string email, string password)
-    {
-        var errors = new List<ValidationError>();
-
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            errors.Add(new ValidationError("Auth.EmailRequired", "Email is required."));
-        }
-
-        if (string.IsNullOrWhiteSpace(password))
-        {
-            errors.Add(new ValidationError("Auth.PasswordRequired", "Password is required."));
-        }
-
-        return errors;
     }
 
     private AuthResponse CreateAuthResponse(AppUser user)

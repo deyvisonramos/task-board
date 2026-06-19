@@ -52,9 +52,6 @@ public abstract class ApiControllerBase : ControllerBase
 
         return error.Code switch
         {
-            "Auth.InvalidCredentials" => Unauthorized(response),
-            "Auth.InvalidToken" => Unauthorized(response),
-            "Auth.UserNotFound" => Unauthorized(response),
             "Task.NotFound" => NotFound(response),
             _ => BadRequest(response)
         };

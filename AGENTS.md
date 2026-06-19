@@ -111,6 +111,9 @@ Authentication rules:
 - Support refresh tokens.
 - Protected endpoints must reject anonymous requests.
 - The API must never return password hashes.
+- Use ASP.NET Core authentication/authorization middleware, policies, and handlers for authentication and authorization decisions.
+- Do not map authentication failures manually in controller response helpers.
+- Keep application result mapping for application failures, not middleware-owned authentication challenges.
 
 API contract rules:
 
@@ -120,6 +123,9 @@ API contract rules:
 - Use a single error response format across the API.
 - Validation responses should follow the same general error format and include a validation array.
 - Each validation item should include a message and a code.
+- Use FluentValidation 11.x for request DTO validation.
+- Keep validators in the same assembly as the request DTOs they validate.
+- Register validators automatically by assembly, and return validation failures through the standard API error response format.
 
 ## API endpoints
 
@@ -251,3 +257,4 @@ A task is done only when:
 - The implementation follows Clean Architecture.
 - No banned libraries were added.
 - The README or docs are updated when needed.
+- A stale-artifact cleanup pass was completed: remove or update obsolete files, duplicate validation/business rules, unused manual-test assets, dead classes, and superseded docs created or made stale by the iteration.
