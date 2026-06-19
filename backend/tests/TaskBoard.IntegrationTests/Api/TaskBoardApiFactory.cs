@@ -10,15 +10,19 @@ namespace TaskBoard.IntegrationTests.Api;
 public sealed class TaskBoardApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _connectionString;
+    private readonly string _environment;
 
-    public TaskBoardApiFactory(string connectionString)
+    public TaskBoardApiFactory(
+        string connectionString,
+        string environment = "Development")
     {
         _connectionString = connectionString;
+        _environment = environment;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment(_environment);
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<DbConnectionFactory>();

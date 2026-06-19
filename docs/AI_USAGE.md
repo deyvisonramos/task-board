@@ -385,3 +385,50 @@ Set up the frontend skeleton: React and TypeScript app structure, basic routing,
 
 - No frontend form validation is implemented because login and registration forms are out of scope.
 - API base URL configuration uses `VITE_API_BASE_URL` with a local default.
+
+## Phase: Lightweight Observability
+
+### Prompt used with Codex
+
+Add lightweight observability to TaskBoard without heavy infrastructure: correlation IDs, structured request logging, safe exception logging, infrastructure startup logs, high-level controller event logs, a simple health endpoint, frontend ErrorBoundary support, tests, and documentation. Do not use EF, Dapper, MediatR, Serilog, Elasticsearch, Prometheus, Grafana, Jaeger, Application Insights, or cloud-specific services.
+
+### Representative generated code
+
+- `TaskBoard.Api.Middleware.CorrelationIdMiddleware`.
+- `TaskBoard.Api.Middleware.RequestLoggingMiddleware`.
+- `TaskBoard.Api.Middleware.ExceptionHandlingMiddleware`.
+- `/api/health` status metadata endpoint in `Program.cs`.
+- Boundary-level logs in auth and task controllers.
+- Database initialization logs in `DbInitializer`.
+- `frontend/src/components/ErrorBoundary.tsx`.
+- Axios error request ID metadata in `frontend/src/api/httpClient.ts`.
+- Integration tests in `ObservabilityApiTests`.
+
+### How the output was validated
+
+- Backend validation target: `dotnet test` from `backend`.
+- Frontend validation target: `npm run build` from `frontend`.
+- Static search target: `EntityFramework`, `Dapper`, and `MediatR`.
+
+### What was corrected
+
+- Observability stays inside API, Infrastructure startup, and frontend UI boundaries.
+- No request bodies, passwords, password hashes, JWT tokens, or Authorization header values are logged.
+- A Testing-only exception endpoint supports safe exception response coverage without adding a development or production debug endpoint.
+
+### Edge cases
+
+- Missing `X-Correlation-ID` values are generated server-side.
+- Supplied `X-Correlation-ID` values are preserved in response headers.
+- Protected endpoints still return 401 through ASP.NET Core middleware when unauthenticated.
+- Unhandled exception responses include both `correlationId` and `traceId`.
+
+### Authentication decisions
+
+- Auth failures remain owned by ASP.NET Core authentication/authorization middleware.
+- Controller logs record high-level auth events without logging credentials or tokens.
+
+### Validation decisions
+
+- The existing API validation response format is unchanged.
+- Unhandled exceptions use safe ProblemDetails responses because they are middleware-owned unexpected failures, not application validation failures.

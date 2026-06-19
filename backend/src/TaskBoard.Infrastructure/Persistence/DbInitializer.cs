@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace TaskBoard.Infrastructure.Persistence;
 
 public sealed class DbInitializer
@@ -9,20 +11,36 @@ public sealed class DbInitializer
     ];
 
     private readonly DbConnectionFactory _connectionFactory;
+    private readonly ILogger<DbInitializer> _logger;
 
-    public DbInitializer(DbConnectionFactory connectionFactory)
+    public DbInitializer(
+        DbConnectionFactory connectionFactory,
+        ILogger<DbInitializer> logger)
     {
         _connectionFactory = connectionFactory;
+        _logger = logger;
     }
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        await EnsureDatabaseExistsAsync(cancellationToken);
-        await EnsureMigrationHistoryTableAsync(cancellationToken);
-
-        foreach (var scriptName in ScriptNames)
+        try
         {
-            await ExecuteScriptAsync(scriptName, cancellationToken);
+            _logger.LogInformation("Database initialization started.");
+
+            await EnsureDatabaseExistsAsync(cancellationToken);
+            await EnsureMigrationHistoryTableAsync(cancellationToken);
+
+            foreach (var scriptName in ScriptNames)
+            {
+                await ExecuteScriptAsync(scriptName, cancellationToken);
+            }
+
+            _logger.LogInformation("Database initialization completed.");
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Database initialization failed.");
+            throw;
         }
     }
 
@@ -67,6 +85,8 @@ public sealed class DbInitializer
             return;
         }
 
+        _logger.LogInformation("Applying database seed or migration script. ScriptName: {ScriptName}", scriptName);
+
         await using (var command = connection.CreateCommand())
         {
             command.Transaction = transaction;
@@ -76,6 +96,8 @@ public sealed class DbInitializer
 
         await RecordScriptAppliedAsync(connection, transaction, scriptName, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        _logger.LogInformation("Database seed or migration script applied. ScriptName: {ScriptName}", scriptName);
     }
 
     private static async Task<bool> WasScriptAppliedAsync(
