@@ -40,13 +40,9 @@ public sealed class AuthController : ApiControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me(CancellationToken cancellationToken)
     {
-        var result = await _authService.GetCurrentUserAsync(GetUserId(), cancellationToken);
+        var userId = GetCurrentUserId();
+        var result = await _authService.GetCurrentUserAsync(userId, cancellationToken);
 
         return FromResult(result, Ok);
-    }
-
-    private Guid GetUserId()
-    {
-        return Guid.Parse(User.FindFirst("sub")!.Value);
     }
 }

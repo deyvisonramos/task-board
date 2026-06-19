@@ -208,6 +208,48 @@ Add a Thunder Client collection for manually calling the API flows and update do
 - Essential runtime dependencies should add health checks in the same PR that introduces them.
 - Health checks should not expose secrets or sensitive connection details.
 
+## Phase: Protected Task CRUD API
+
+### Prompt used with Codex
+
+Implement the protected Task CRUD API: `TasksController`, current-user claim helper if needed, and API integration tests for authenticated task CRUD. Keep controllers thin, source ownership from JWT claims, keep validation in Application, keep SQL in Infrastructure, and do not use EF, Dapper, or MediatR.
+
+### Representative generated code
+
+- `TaskBoard.Api.Controllers.TasksController`.
+- Shared `GetCurrentUserId` and non-generic result mapping in `ApiControllerBase`.
+- JSON enum conversion for readable task status values.
+- WebApplicationFactory/Testcontainers-backed task API integration tests.
+- Thunder Client task CRUD requests.
+
+### How the output was validated
+
+- `dotnet build backend\TaskBoard.slnx` passed.
+- `dotnet test` from `backend` passed all unit and integration tests.
+
+### What was corrected
+
+- The private auth-controller claim parser was moved into the shared API controller base for reuse.
+- `Task.NotFound` now maps to HTTP 404 so cross-user task access does not leak ownership details.
+
+### Edge cases
+
+- Anonymous task requests return 401.
+- Cross-user get, update, and delete attempts return 404.
+- Invalid titles return the shared validation error response.
+- A submitted `userId` field on create is ignored because task ownership comes from the JWT subject claim.
+
+### Authentication decisions
+
+- Task endpoints are explicitly marked with `[Authorize]`.
+- Task ownership is derived only from the `sub` claim in the authenticated access token.
+- JWT bearer validation rejects access tokens whose `sub` claim is missing or is not a GUID, so controllers treat the current user id as an authenticated invariant.
+
+### Validation decisions
+
+- Task request DTOs do not include `UserId`.
+- Task validation remains in `TaskService` and returns code/message validation items through the shared API error format.
+
 ## Phase: Validation and Auth Pipeline Cleanup
 
 ### Prompt used with Codex

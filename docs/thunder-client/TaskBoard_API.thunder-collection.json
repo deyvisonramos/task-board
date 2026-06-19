@@ -25,6 +25,13 @@
       "containerId": "",
       "created": "2026-06-19T00:00:00.000Z",
       "sortNum": 30000
+    },
+    {
+      "_id": "taskboard-folder-tasks",
+      "name": "Tasks",
+      "containerId": "",
+      "created": "2026-06-19T00:00:00.000Z",
+      "sortNum": 40000
     }
   ],
   "requests": [
@@ -164,6 +171,129 @@
       "url": "{{baseUrl}}/api/private/ping",
       "method": "GET",
       "sortNum": 31000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{accessToken}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-list-tasks",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-tasks",
+      "name": "GET Tasks",
+      "url": "{{baseUrl}}/api/tasks",
+      "method": "GET",
+      "sortNum": 40000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{accessToken}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-create-task",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-tasks",
+      "name": "POST Create Task",
+      "url": "{{baseUrl}}/api/tasks",
+      "method": "POST",
+      "sortNum": 41000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{accessToken}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Manual API task\",\n  \"description\": \"Created from Thunder Client\",\n  \"dueDate\": \"2026-06-20T12:00:00Z\",\n  \"status\": \"Todo\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-get-task",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-tasks",
+      "name": "GET Task by Id",
+      "url": "{{baseUrl}}/api/tasks/{{taskId}}",
+      "method": "GET",
+      "sortNum": 42000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{accessToken}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-update-task",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-tasks",
+      "name": "PUT Update Task",
+      "url": "{{baseUrl}}/api/tasks/{{taskId}}",
+      "method": "PUT",
+      "sortNum": 43000,
+      "created": "2026-06-19T00:00:00.000Z",
+      "modified": "2026-06-19T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{accessToken}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Updated manual API task\",\n  \"description\": \"Updated from Thunder Client\",\n  \"dueDate\": \"2026-06-21T12:00:00Z\",\n  \"status\": \"InProgress\"\n}",
+        "form": []
+      }
+    },
+    {
+      "_id": "taskboard-request-delete-task",
+      "colId": "taskboard-api",
+      "containerId": "taskboard-folder-tasks",
+      "name": "DELETE Task",
+      "url": "{{baseUrl}}/api/tasks/{{taskId}}",
+      "method": "DELETE",
+      "sortNum": 44000,
       "created": "2026-06-19T00:00:00.000Z",
       "modified": "2026-06-19T00:00:00.000Z",
       "headers": [
